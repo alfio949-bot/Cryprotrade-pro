@@ -1,0 +1,3008 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+
+  <!-- ═══════════════ PROTEZIONE ACCESSO LOCALE ═══════════════ -->
+  <script>
+// ████████████████████████████████████████████
+// ██   SECURITY LAYER — CryptoTrade Pro     ██
+// ████████████████████████████████████████████
+(function(){
+  'use strict';
+
+  // 1. FINGERPRINT SESSIONE (anti-session-hijack)
+  (function fingerprint(){
+    try {
+      var nav = window.navigator;
+      var fp = [nav.userAgent, nav.language, nav.platform,
+        screen.width+'x'+screen.height+'x'+screen.colorDepth,
+        new Date().getTimezoneOffset(),
+        !!nav.cookieEnabled, nav.hardwareConcurrency||0, nav.maxTouchPoints||0
+      ].join('|');
+      var hash = 0;
+      for(var i=0;i<fp.length;i++){ hash=((hash<<5)-hash)+fp.charCodeAt(i); hash|=0; }
+      var stored = sessionStorage.getItem('_sec_fp');
+      if(!stored){ sessionStorage.setItem('_sec_fp', hash); }
+      else if(parseInt(stored)!==hash){ sessionStorage.clear(); localStorage.removeItem('authToken'); }
+    } catch(e){}
+  })();
+
+  // 2. RATE LIMITING GLOBALE
+  window._RL=(function(){
+    var counts={},blocked={};
+    return { check:function(key,max,windowMs){
+      var now=Date.now();
+      if(blocked[key]&&now<blocked[key]) return false;
+      if(!counts[key]||now-counts[key].t>windowMs){ counts[key]={n:1,t:now}; }
+      else{ counts[key].n++; if(counts[key].n>max){ blocked[key]=now+windowMs*2; return false; } }
+      return true;
+    }};
+  })();
+
+  // 3. SESSION TOKEN CSRF
+  (function(){
+    try{
+      if(!sessionStorage.getItem('_csrf')){
+        var arr=new Uint8Array(16); crypto.getRandomValues(arr);
+        sessionStorage.setItem('_csrf',Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join(''));
+      }
+    }catch(e){}
+  })();
+
+  // 4. ANTI-DEVTOOLS
+  (function(){
+    setInterval(function(){
+      var w=window.outerWidth-window.innerWidth, h=window.outerHeight-window.innerHeight;
+      if(w>160||h>160){ document.body.style.filter='blur(10px)'; document.body.style.pointerEvents='none';
+        setTimeout(function(){ document.body.style.filter=''; document.body.style.pointerEvents=''; },3000); }
+    },2000);
+  })();
+
+  // 5. XSS SANITIZER
+  window._sanitize=function(s){
+    if(typeof s!=='string') return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#x27;').replace(/\//g,'&#x2F;');
+  };
+
+  // 6. CLICKJACKING BUSTER
+  if(window.self!==window.top){ document.documentElement.style.display='none'; try{ window.top.location=window.self.location; }catch(e){} }
+
+  // 7. SECURE STORAGE
+  window._secStore={
+    set:function(k,v){ try{ localStorage.setItem('_s_'+k,btoa(unescape(encodeURIComponent(JSON.stringify(v))))); }catch(e){} },
+    get:function(k){ try{ var d=localStorage.getItem('_s_'+k); return d?JSON.parse(decodeURIComponent(escape(atob(d)))):null; }catch(e){return null;} },
+    del:function(k){ localStorage.removeItem('_s_'+k); }
+  };
+
+  // 8. SCRIPT ERROR MONITOR
+  window.addEventListener('error',function(e){ if(e.target&&e.target.tagName==='SCRIPT') console.error('[SEC] Script failed:',e.target.src); },true);
+
+  // 9. COPY PROTECTION chiavi/token
+  document.addEventListener('copy',function(e){
+    var sel=window.getSelection?window.getSelection().toString():'';
+    if(/([0-9a-f]{64}|[A-Za-z0-9+\/]{40,}={0,2})/.test(sel)){
+      try{ e.clipboardData.setData('text/plain','[PROTECTED]'); e.preventDefault(); }catch(ee){}
+    }
+  });
+
+  // 10. DOM INTEGRITY MONITOR (anti-injection)
+  try{
+    var obs=new MutationObserver(function(muts){
+      muts.forEach(function(m){ m.addedNodes.forEach(function(n){
+        if(n.tagName==='SCRIPT'&&n.src&&!n.src.startsWith(location.origin)){
+          var ok=['cdn.jsdelivr.net','unpkg.com','fonts.googleapis','cdnjs.cloudflare'].some(function(a){ return n.src.indexOf(a)>=0; });
+          if(!ok){ n.remove(); console.error('[SEC] Blocked:',n.src); }
+        }
+      });});
+    });
+    obs.observe(document.documentElement,{childList:true,subtree:true});
+  }catch(e){}
+
+})();
+// ████████████████████████████████████████████
+
+</script>
+<script>
+    (function() {
+      if (window.location.protocol !== 'file:' && window.location.protocol !== 'content:') {
+        document.addEventListener('DOMContentLoaded', function() {
+          document.body.innerHTML = '';
+          document.body.style.cssText = 'margin:0;background:#060910;display:flex;align-items:center;justify-content:center;height:100vh;font-family:Inter,sans-serif;';
+          document.body.innerHTML = `
+            <div style="text-align:center;padding:40px;max-width:420px;">
+              <div style="font-size:56px;margin-bottom:20px;">🔒</div>
+              <h1 style="color:#ef4444;font-size:22px;font-weight:800;margin-bottom:12px;">Accesso negato</h1>
+              <p style="color:#9ca3af;font-size:14px;line-height:1.6;margin-bottom:24px;">
+                Il Panel Admin è accessibile <strong style="color:#f97316;">solo da file locale</strong>.<br>
+                Apri il file <code style="background:#111827;padding:2px 8px;border-radius:4px;color:#a78bfa;">crypto_admin_v3_fixed.html</code>
+                direttamente dal tuo computer (doppio click o File → Apri).
+              </p>
+              <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:14px;font-size:12px;color:#fca5a5;">
+                ⚠️ Per motivi di sicurezza, le credenziali admin sono salvate nel <em>localStorage</em> del tuo browser locale e non devono essere accessibili via rete.
+              </div>
+            </div>`;
+        });
+        // Blocca anche l'esecuzione di qualsiasi altro script
+        document.write = function(){};
+      }
+    })();
+  </script>
+  <!-- ══════════════════════════════════════════════════════════ -->
+
+  <link rel="apple-touch-icon" href="https://media.base44.com/images/public/6a27fd33bcf275f899eecca4/ce08ee72e_generated_image.png">
+  <link rel="icon" type="image/png" href="https://media.base44.com/images/public/6a27fd33bcf275f899eecca4/ce08ee72e_generated_image.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CryptoTrade Admin">
+  <meta name="theme-color" content="#060910">
+  <meta charset="UTF-8"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: wss:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://superagent-1958ad27.base44.app https://api.binance.com https://ip-api.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=()">
+  <meta name="robots" content="noindex, nofollow"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CryptoTrade Pro — Admin Panel</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg0:#060910;--bg1:#0d1117;--bg2:#0f1520;--bg3:#141b2d;
+  --b:rgba(255,255,255,0.07);--b2:rgba(255,255,255,0.13);
+  --txt:#e8eaf0;--muted:#6b7280;
+  --admin:#ef4444;--admin2:#f97316;
+  --green:#10b981;--red:#ef4444;--yellow:#f59e0b;--cyan:#06b6d4;--purple:#a855f7;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif;}
+html,body{height:100%;background:var(--bg0);color:var(--txt);}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+
+/* ── LOGIN ── */
+#login-screen{
+  position:fixed;inset:0;background:var(--bg0);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;
+}
+.login-box{
+  background:var(--bg2);border:1px solid var(--b2);
+  border-radius:16px;padding:36px;width:360px;
+}
+.login-title{
+  font-size:22px;font-weight:800;text-align:center;margin-bottom:4px;
+  background:linear-gradient(135deg,#ef4444,#f97316);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.login-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px;}
+.lock-icon{text-align:center;font-size:36px;margin-bottom:12px;}
+.rate-bar{height:3px;background:var(--b);border-radius:2px;margin-top:8px;overflow:hidden;}
+.rate-fill{height:100%;background:linear-gradient(90deg,#ef4444,#f97316);transition:width .3s;}
+
+/* ── TOPBAR ── */
+#topbar{
+  height:48px;flex-shrink:0;display:flex;align-items:center;
+  padding:0 16px;gap:12px;
+  background:var(--bg1);border-bottom:1px solid rgba(239,68,68,0.2);
+  z-index:20;
+}
+.admin-logo{
+  font-size:15px;font-weight:800;white-space:nowrap;
+  background:linear-gradient(135deg,#ef4444,#f97316);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.admin-badge{
+  font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
+  background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);
+  white-space:nowrap;
+}
+.session-chip{
+  display:flex;align-items:center;gap:5px;font-size:10px;
+  color:var(--muted);margin-left:auto;
+}
+.session-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+
+/* ── LAYOUT ── */
+#app-wrap{display:flex;height:calc(100vh - 48px);}
+#sidebar{
+  width:200px;flex-shrink:0;
+  background:var(--bg1);border-right:1px solid var(--b);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#main-content{flex:1;overflow:auto;display:flex;flex-direction:column;}
+
+/* ── SIDEBAR NAV ── */
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px;font-size:12px;font-weight:600;
+  color:var(--muted);cursor:pointer;transition:.2s;
+  border-left:3px solid transparent;
+}
+.nav-item:hover{color:var(--txt);background:rgba(255,255,255,0.03);}
+.nav-item.active{
+  color:var(--red);background:rgba(239,68,68,0.08);
+  border-left-color:var(--red);
+}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-badge{
+  margin-left:auto;font-size:9px;font-weight:700;
+  padding:1px 6px;border-radius:20px;
+  background:rgba(239,68,68,0.2);color:var(--red);
+}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--b);border-radius:10px;overflow:hidden;}
+.card-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;border-bottom:1px solid var(--b);
+  background:rgba(255,255,255,0.02);flex-shrink:0;
+}
+.card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+
+/* ── KPI CARDS ── */
+.kpi{
+  background:var(--bg2);border:1px solid var(--b);border-radius:10px;
+  padding:16px;position:relative;overflow:hidden;
+}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.red::before{background:linear-gradient(90deg,#ef4444,#f97316);}
+.kpi.green::before{background:linear-gradient(90deg,#10b981,#059669);}
+.kpi.blue::before{background:linear-gradient(90deg,#3b82f6,#6366f1);}
+.kpi.purple::before{background:linear-gradient(90deg,#a855f7,#6366f1);}
+.kpi.yellow::before{background:linear-gradient(90deg,#f59e0b,#f97316);}
+.kpi.cyan::before{background:linear-gradient(90deg,#06b6d4,#3b82f6);}
+.kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;}
+.kpi-value{font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;}
+.kpi-sub{font-size:10px;color:var(--muted);margin-top:4px;}
+.kpi-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:28px;opacity:.25;}
+
+/* ── TABLES ── */
+.dt{width:100%;border-collapse:collapse;font-size:11px;}
+.dt th{text-align:left;padding:6px 12px;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--b);font-weight:500;white-space:nowrap;position:sticky;top:0;background:var(--bg2);z-index:1;}
+.dt td{padding:6px 12px;border-bottom:1px solid rgba(255,255,255,.03);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.dt tr:hover td{background:rgba(255,255,255,.02);}
+.badge{display:inline-flex;align-items:center;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.bg-ok{background:rgba(16,185,129,.15);color:var(--green);}
+.bg-err{background:rgba(239,68,68,.15);color:var(--red);}
+.bg-warn{background:rgba(245,158,11,.15);color:var(--yellow);}
+.bg-info{background:rgba(99,102,241,.15);color:#6366f1;}
+.bg-muted{background:rgba(107,114,128,.15);color:var(--muted);}
+.bg-purple{background:rgba(168,85,247,.15);color:var(--purple);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.badge.blink{animation:blink 1.2s infinite;}
+
+/* ── INPUTS ── */
+.inp{
+  width:100%;background:rgba(255,255,255,0.04)!important;
+  color:#fff!important;border:1px solid var(--b)!important;
+  border-radius:6px;padding:7px 10px;font-size:12px;
+  font-family:'JetBrains Mono',monospace;transition:.2s;
+}
+.inp:focus{outline:none!important;border-color:var(--red)!important;box-shadow:0 0 0 2px rgba(239,68,68,.15)!important;}
+.inp::placeholder{color:rgba(255,255,255,.2)!important;}
+.inp-wrap{position:relative;}
+.inp-wrap .inp{padding-right:38px;}
+.eye-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;}
+.lbl{font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;}
+
+/* ── BUTTONS ── */
+.btn{padding:6px 14px;font-size:11px;font-weight:600;border-radius:6px;border:none;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:5px;}
+.btn-admin{background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;}
+.btn-admin:hover{opacity:.88;transform:translateY(-1px);}
+.btn-green{background:linear-gradient(135deg,#10b981,#059669);color:#fff;}
+.btn-green:hover{opacity:.88;}
+.btn-blue{background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;}
+.btn-blue:hover{opacity:.88;}
+.btn-ghost{background:transparent;border:1px solid var(--b);color:var(--muted);}
+.btn-ghost:hover{border-color:var(--b2);color:var(--txt);}
+.btn-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);}
+.btn-danger:hover{background:rgba(239,68,68,.2);}
+.btn-lg{width:100%;padding:10px;font-size:13px;font-weight:700;border-radius:8px;border:none;cursor:pointer;transition:.2s;}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s;}
+.modal{background:var(--bg2);border:1px solid var(--b2);border-radius:14px;padding:24px;max-width:540px;width:94%;max-height:90vh;overflow:auto;position:relative;}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+.close-btn{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;}
+
+/* ── OTP ── */
+.otp-wrap{display:flex;gap:8px;justify-content:center;margin:10px 0;}
+.otp-box{width:40px;height:48px;text-align:center;font-size:20px;font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:8px;color:#fff;font-weight:700;transition:.2s;}
+.otp-box:focus{border-color:var(--red);outline:none;box-shadow:0 0 0 2px rgba(239,68,68,.2);}
+.step-dots{display:flex;gap:6px;justify-content:center;margin-bottom:14px;}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--b2);}
+.step-dot.active{background:var(--red);}
+.step-dot.done{background:var(--green);}
+.backup-codes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0;}
+.backup-code{background:var(--bg3);border:1px solid var(--b);border-radius:6px;padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:12px;text-align:center;color:var(--admin2);}
+.qr-box{width:150px;height:150px;background:#fff;border-radius:8px;margin:10px auto;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.qr-box img{width:100%;height:100%;}
+
+/* ── BROKER SECTION ── */
+.broker-card{background:var(--bg3);border:1px solid var(--b);border-radius:10px;padding:16px;position:relative;}
+.broker-card.active-broker{border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.04);}
+.broker-logo{font-size:22px;margin-bottom:6px;}
+.broker-name{font-size:13px;font-weight:700;}
+.broker-status{font-size:10px;margin-top:2px;margin-bottom:10px;}
+.commission-flow{
+  background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(249,115,22,.08));
+  border:1px solid rgba(239,68,68,.2);border-radius:10px;
+  padding:16px;margin-bottom:16px;
+}
+.flow-arrow{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);}
+.flow-box{background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:6px 12px;font-size:11px;font-weight:600;text-align:center;}
+.flow-arrow span{font-size:16px;color:var(--admin);}
+
+/* ── ANIMATIONS ── */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-in{animation:fadeIn .2s ease;}
+.spin{animation:spin .8s linear infinite;}
+
+/* ── MISC ── */
+.section-title{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.warn-box{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:12px 14px;font-size:11px;line-height:1.7;}
+.info-box{background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.25);border-radius:8px;padding:12px 14px;font-size:11px;line-height:1.7;}
+.danger-box{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:12px 14px;font-size:11px;line-height:1.7;}
+.note{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5;}
+.divider{height:1px;background:var(--b);margin:16px 0;}
+.empty{text-align:center;padding:24px;color:var(--muted);font-size:12px;}
+.tooltip{position:relative;display:inline-flex;}
+.tooltip:hover::after{content:attr(data-tip);position:absolute;bottom:125%;left:50%;transform:translateX(-50%);background:#1a1f35;color:#ccc;font-size:10px;padding:4px 8px;border-radius:5px;white-space:nowrap;border:1px solid var(--b);z-index:10;}
+select option{background:#1a1015;color:#fff;}
+</style>
+</head>
+<body>
+  <!-- BANNER RESET EMERGENZA -->
+  <div id="emergency-reset-bar" style="background:#7c3aed;color:#fff;text-align:center;padding:12px;font-size:14px;position:relative;z-index:9999;">
+    🔐 Problemi di accesso?
+    <button id="btn-emergency" style="background:#fff;color:#7c3aed;border:none;border-radius:6px;padding:8px 18px;font-weight:700;cursor:pointer;margin-left:10px;font-size:14px;" onclick="(function(){['admin_pwd_hash','admin_username','admin_rl','adminLoggedIn'].forEach(function(k){localStorage.removeItem(k);});location.reload();})()">🔄 Resetta e ricarica</button>
+  </div>
+
+<!-- ════════════════════════════════════════
+     LOGIN SCREEN (Admin)
+════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="lock-icon">🔐</div>
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">CryptoTrade Pro — Accesso riservato<br><span style="font-size:10px;color:var(--yellow);" id="first-access-hint"></span></div>
+
+    <div id="login-block-msg" style="display:none;" class="danger-box" style="margin-bottom:12px;text-align:center;"></div>
+    <button id="btn-reset-lockout" style="display:none;margin-top:6px;width:100%;padding:6px;font-size:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#9ca3af;cursor:pointer;" onclick="resetLockout()">🔓 Sblocca accesso (reset tentativi)</button>
+    <div id="login-err" style="color:var(--red);font-size:11px;min-height:14px;margin-bottom:8px;text-align:center;"></div>
+
+    <!-- FORM LOGIN NORMALE -->
+    <div id="login-fields">
+      <div style="margin-bottom:10px;">
+        <div class="lbl">Username</div>
+        <input type="text" id="login-user" class="inp" placeholder="admin" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div class="lbl">Password</div>
+        <div class="inp-wrap">
+          <input type="password" id="login-pass" class="inp" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+          <button class="eye-btn" onclick="toggleVis('login-pass',this)">👁</button>
+        </div>
+      </div>
+      <!-- Rate limit bar -->
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:3px;">
+        <span>Tentativi</span><span id="attempts-label">0 / 5</span>
+      </div>
+      <div class="rate-bar"><div class="rate-fill" id="rate-fill" style="width:0%"></div></div>
+      <button class="btn-lg btn-admin" onclick="doLogin()" style="margin-top:14px;">Accedi</button>
+    </div>
+
+    <!-- PANNELLO PRIMO ACCESSO INLINE (visibile solo se non c'è password) -->
+    <div id="inline-setup-panel" style="display:none;">
+      <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.3);border-radius:10px;padding:12px;margin-bottom:12px;font-size:11px;color:#fb923c;">
+        🔑 Primo accesso rilevato. Scegli username e password — vengono salvati <b>solo su questo dispositivo</b> come hash SHA-256.
+      </div>
+      <div style="margin-bottom:10px;">
+        <div class="lbl">Username Admin</div>
+        <input type="text" id="setup-user-inline" class="inp" placeholder="Scegli il tuo username (es. cryptoAdmin)" autocomplete="username"/>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">Evita 'admin' o 'root' — scegli qualcosa di unico.</div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div class="lbl">Password (min. 12 caratteri)</div>
+        <div class="inp-wrap">
+          <input type="password" id="setup-pwd-inline1" class="inp" placeholder="Almeno 12 caratteri, 1 maiusc., 1 numero" oninput="checkInlinePwdStrength()" autocomplete="new-password"/>
+          <button class="eye-btn" onclick="toggleVis('setup-pwd-inline1',this)">👁</button>
+        </div>
+      </div>
+      <div id="inline-pwd-strength" style="margin-bottom:8px;"></div>
+      <div style="margin-bottom:10px;">
+        <div class="lbl">Conferma Password</div>
+        <div class="inp-wrap">
+          <input type="password" id="setup-pwd-inline2" class="inp" placeholder="Ripeti la password" autocomplete="new-password"/>
+          <button class="eye-btn" onclick="toggleVis('setup-pwd-inline2',this)">👁</button>
+        </div>
+      </div>
+      <div id="inline-setup-err" style="color:var(--red);font-size:11px;min-height:14px;margin-bottom:8px;text-align:center;"></div>
+      <button class="btn-lg btn-admin" onclick="saveInlineSetup()" style="background:linear-gradient(135deg,#f97316,#ef4444);">
+        🔐 Imposta Credenziali e Accedi
+      </button>
+    </div>
+
+    <div style="text-align:center;margin-top:12px;font-size:10px;color:var(--muted);">
+      ← <a href="crypto_dashboard_v3_fixed.html" style="color:var(--muted);">Torna alla Dashboard</a>
+    </div>
+    <!-- Pulsante reset visibile SOLO da file locale (non HTTPS) -->
+    <div id="local-reset-zone" style="text-align:center;margin-top:10px;">
+      <button id="btn-reset-creds" onclick="showResetConfirm()" style="background:transparent;border:1px solid #374151;border-radius:8px;color:#6b7280;font-size:10px;padding:6px 14px;cursor:pointer;">🔄 Reimposta credenziali di accesso</button>
+      <div id="reset-confirm-box" style="display:none;margin-top:10px;background:#1a1a2e;border:1px solid #ef4444;border-radius:10px;padding:12px;">
+        <p style="color:#ef4444;font-size:12px;margin:0 0 10px 0;">⚠️ Sei sicuro? Le credenziali verranno eliminate.</p>
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <button onclick="doReset()" style="background:#ef4444;border:none;border-radius:8px;color:#fff;font-size:12px;padding:8px 16px;cursor:pointer;font-weight:700;">✅ Sì, resetta</button>
+          <button onclick="cancelReset()" style="background:transparent;border:1px solid #374151;border-radius:8px;color:#6b7280;font-size:12px;padding:8px 16px;cursor:pointer;">✕ Annulla</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MAIN APP (mostrato dopo login)
+════════════════════════════════════════ -->
+<div id="main-app" style="display:none;height:100vh;flex-direction:column;">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <span class="admin-logo">⚡ CryptoTrade Pro</span>
+    <span class="admin-badge">🛡 ADMIN</span>
+    <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);">
+      <span>2FA:</span>
+      <span id="tfa-status-chip" style="color:var(--red);">OFF</span>
+    </div>
+    <div class="session-chip" style="margin-left:auto;">
+      <div class="session-dot"></div>
+      <span>Sessione attiva —</span>
+      <span id="session-timer" style="font-family:'JetBrains Mono',monospace;">60:00</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);padding:3px 10px;border:1px solid var(--b);border-radius:5px;" id="admin-user-chip">admin</div>
+    <button class="btn btn-danger" onclick="adminLogout()" style="font-size:10px;padding:3px 10px;">⏻ Logout</button>
+  </div>
+
+  <!-- BODY -->
+  <div id="app-wrap">
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div style="padding:12px 16px 6px;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">Gestione</div>
+      <div class="nav-item active" id="nav-dashboard"  onclick="showTab('dashboard')"><span class="nav-icon">📊</span>Dashboard</div>
+      <div class="nav-item"        id="nav-users"       onclick="showTab('users')"><span class="nav-icon">👥</span>Utenti<span class="nav-badge" id="nb-users">0</span></div>
+      <div class="nav-item"        id="nav-tickets"     onclick="showTab('tickets')"><span class="nav-icon">🎫</span>Ticket<span class="nav-badge" id="nb-tickets">0</span></div>
+      <div class="nav-item"        id="nav-revenue"     onclick="showTab('revenue')"><span class="nav-icon">💰</span>Revenue</div>
+      <div class="nav-item"        id="nav-broker"      onclick="showTab('broker')"><span class="nav-icon">🏦</span>Broker API</div>
+      <div class="nav-item"        id="nav-commissions" onclick="showTab('commissions')"><span class="nav-icon">📈</span>Commissioni</div>
+      <div class="nav-item"        id="nav-exchanges"   onclick="showTab('exchanges')"><span class="nav-icon">🔗</span>Exchange</div>
+      <div style="padding:12px 16px 6px;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:6px;">Sicurezza</div>
+      <div class="nav-item"        id="nav-security"    onclick="showTab('security')"><span class="nav-icon">🛡</span>Sicurezza</div>
+      <div class="nav-item"        id="nav-audit"       onclick="showTab('audit')"><span class="nav-icon">📋</span>Audit Log</div>
+      <div class="nav-item"        id="nav-sessions"    onclick="showTab('sessions')"><span class="nav-icon">📱</span>Sessioni<span class="nav-badge" id="nb-sessions">0</span></div>
+      <div style="padding:12px 16px 6px;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:6px;">DeFi & Finanza</div>
+      <div class="nav-item" id="nav-defi-mgmt"   onclick="showTab('defi_mgmt')"><span class="nav-icon">🌐</span>DeFi Hub</div>
+      <div class="nav-item" id="nav-stocks-cfg"  onclick="showTab('stocks_cfg')"><span class="nav-icon">📈</span>Mercati Azionari</div>
+      <div class="nav-item" id="nav-premium"      onclick="showTab('premium')"><span class="nav-icon">⭐</span>Premium/Paywall<span class="nav-badge" id="nb-premium" style="background:#a855f7;">0</span></div>
+      <div class="nav-item" id="nav-kyc-mgmt"     onclick="showTab('kyc_mgmt')"><span class="nav-icon">🪪</span>KYC Utenti<span class="nav-badge" id="nb-kyc" style="background:#f59e0b;">0</span></div>
+      <div class="nav-item" id="nav-notif-cfg"    onclick="showTab('notif_cfg')"><span class="nav-icon">🔔</span>Notifiche Push</div>
+      <div class="nav-item" id="nav-analytics"    onclick="showTab('analytics')"><span class="nav-icon">📉</span>Analytics</div>
+      <div style="padding:12px 16px 6px;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:6px;">Sistema</div>
+      <div class="nav-item"        id="nav-settings"    onclick="showTab('settings')"><span class="nav-icon">⚙️</span>Impostazioni</div>
+      <div class="nav-item"        id="nav-logs"        onclick="showTab('logs')"><span class="nav-icon">🖥</span>Log Sistema</div>
+      <div class="nav-item" id="nav-feedback" onclick="showTab('feedback');renderFeedbackTab()"><span class="nav-icon">🐛</span>Feedback Beta<span class="nav-badge" id="nb-feedback" style="background:#f59e0b;">0</span></div>
+      <div style="flex:1;"></div>
+      <div style="padding:12px 16px;font-size:10px;color:var(--muted);border-top:1px solid var(--b);">
+        v3.0.0 · <a href="crypto_dashboard_v3_fixed.html" style="color:var(--muted);">← Dashboard</a>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div id="main-content">
+      <div id="tab-content" style="padding:16px;flex:1;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODALS
+════════════════════════════════════════ -->
+<!-- User Detail Modal -->
+<div id="modal-user" style="display:none;" class="overlay" onclick="if(event.target===this)closeModal('modal-user')">
+  <div class="modal" style="max-width:600px;"><button class="close-btn" onclick="closeModal('modal-user')">✕</button><div id="modal-user-content"></div></div>
+</div>
+<!-- Ticket Modal -->
+<div id="modal-ticket" style="display:none;" class="overlay" onclick="if(event.target===this)closeModal('modal-ticket')">
+  <div class="modal"><button class="close-btn" onclick="closeModal('modal-ticket')">✕</button><div id="modal-ticket-content"></div></div>
+</div>
+<!-- 2FA Setup Modal -->
+<div id="modal-2fa" style="display:none;" class="overlay">
+  <div class="modal" style="max-width:380px;">
+    <button class="close-btn" onclick="closeModal('modal-2fa')">✕</button>
+    <div class="modal-title">🔐 Attiva 2FA Admin</div>
+    <div class="step-dots"><div class="step-dot active" id="sd1"></div><div class="step-dot" id="sd2"></div><div class="step-dot" id="sd3"></div></div>
+    <div id="tfa-step-content"></div>
+  </div>
+</div>
+<!-- 2FA Verify Modal -->
+<div id="modal-2fa-verify" style="display:none;" class="overlay">
+  <div class="modal" style="max-width:300px;">
+    <button class="close-btn" onclick="closeModal('modal-2fa-verify')">✕</button>
+    <div class="modal-title">🔐 Verifica 2FA</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Inserisci il codice 6 cifre dall'Authenticator.</div>
+    <div class="otp-wrap" id="verify-otp"></div>
+    <div id="verify-err" style="color:var(--red);font-size:11px;text-align:center;min-height:14px;margin-top:4px;"></div>
+    <button class="btn-lg btn-admin" onclick="verify2FAAndProceed()" style="margin-top:10px;">Verifica</button>
+  </div>
+</div>
+<!-- Confirm Modal -->
+<div id="modal-confirm" style="display:none;" class="overlay">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-title" id="confirm-title">Conferma</div>
+    <div style="font-size:12px;color:var(--muted);margin:10px 0 20px;" id="confirm-body">Sei sicuro?</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">Annulla</button>
+      <button class="btn btn-danger" id="confirm-ok-btn">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ══════════════════════════════════════
+//  CONFIG & CONSTANTS
+// ══════════════════════════════════════
+const ADMIN_HASH_KEY = 'admin_pwd_hash'; // hash salvato in localStorage dall'admin al primo accesso
+const SESSION_MS = 60 * 60 * 1000;
+const RATE_MAX   = 5;
+const RATE_WINDOW = 15 * 60 * 1000;
+const BLOCK_TIME  = 30 * 60 * 1000;
+
+// ══════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════
+const ADM = {
+  loggedIn: false,
+  tfaEnabled: false,
+  tfaSecret: null,
+  _backupCodes: null,
+  tfa2Step: 1,
+  pendingAction: null,
+  sessionEnd: null,
+  currentTab: 'dashboard',
+  users: generateMockUsers(42),
+  tickets: generateMockTickets(18),
+  revenue: generateMockRevenue(60),
+  commissions: generateMockCommissions(30),
+  adminSessions: [
+    {id:'as1',ip:'185.220.101.45',ua:'Chrome 125 / Windows 11',loc:'Milano, IT',date:'2026-06-10 19:00',current:true},
+    {id:'as2',ip:'10.0.0.1',      ua:'Safari 17 / iPhone',     loc:'Roma, IT',  date:'2026-06-10 14:22',current:false},
+  ],
+  auditLog: generateMockAudit(),
+  sysLogs: generateSysLogs(),
+  brokerConfig: {
+    active: 'binance',
+    keys: {},
+    wallets: { binance:'', coinbase:'', kraken:'', manual:'' },
+    autoTransfer: false,
+    threshold: 100,
+  },
+};
+
+// ══════════════════════════════════════
+//  MOCK DATA GENERATORS
+// ══════════════════════════════════════
+function generateMockUsers(n) {
+  const names=['Mario Rossi','Luca Bianchi','Sara Verdi','Anna Russo','Marco Ferrari','Elena Costa','Davide Ricci','Giulia Marino','Paolo Bruno','Chiara Gallo'];
+  const exchanges=['Binance','Coinbase','Kraken','KuCoin','Bybit'];
+  const countries=['🇮🇹 Italia','🇩🇪 Germania','🇫🇷 Francia','🇺🇸 USA','🇬🇧 UK','🇪🇸 Spagna'];
+  const statuses=['active','active','active','suspended','pending'];
+  const u=[];
+  for(let i=0;i<n;i++){
+    const d=new Date(2026,0,1+(i*7));
+    u.push({
+      id:'U'+(1000+i),
+      name: names[i%names.length]+' '+(i+1),
+      email: 'user'+(i+1)+'@email.com',
+      status: statuses[i%statuses.length],
+      exchange: exchanges[i%exchanges.length],
+      country: countries[i%countries.length],
+      volume: +(Math.random()*50000+1000).toFixed(2),
+      fees: +(Math.random()*40+2).toFixed(2),
+      trades: Math.floor(Math.random()*200+5),
+      created_date: d.toISOString(),
+      last_login: new Date(d.getTime()+Math.random()*180*24*3600000).toISOString(),
+      tfa: Math.random()>0.5,
+      kyc: Math.random()>0.4?'verified':'pending',
+      note:'',
+      ip: `${Math.floor(Math.random()*220)+10}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`,
+    });
+  }
+  return u;
+}
+function generateMockTickets(n) {
+  const subjects=['Problema prelievo','API Key non funziona','Ordine bloccato','Verifica KYC','Commissione errata','Accesso sospetto','Reset password','Bug grafico'];
+  const statuses=['open','open','pending','closed'];
+  const priorities=['high','medium','medium','low'];
+  const t=[];
+  for(let i=0;i<n;i++){
+    const d=new Date(2026,5,1+(i*2));
+    t.push({
+      id:'T'+(100+i),
+      userId:'U'+(1000+(i%10)),
+      userName:'User '+(i%10+1),
+      subject: subjects[i%subjects.length],
+      status: statuses[i%statuses.length],
+      priority: priorities[i%priorities.length],
+      created_date: d.toISOString(),
+      messages:[
+        {from:'user',text:'Salve, ho un problema con '+subjects[i%subjects.length].toLowerCase(),date:d.toISOString()},
+      ],
+    });
+  }
+  return t;
+}
+function generateMockRevenue(n) {
+  const pairs=['BTC/USDT','ETH/USDT','SOL/USDT','BNB/USDT','XRP/USDT'];
+  const types=['Market','Limit','Stop'];
+  const r=[];
+  for(let i=0;i<n;i++){
+    const d=new Date(2026,5,1+(i%30));
+    const orderUSD=+(Math.random()*10000+100).toFixed(2);
+    r.push({
+      id:'R'+(2000+i),
+      userId:'U'+(1000+(i%42)),
+      userName:'User '+(i%42+1),
+      pair: pairs[i%pairs.length],
+      type: types[i%types.length],
+      side: i%2===0?'buy':'sell',
+      orderUSD,
+      fee: +(orderUSD*0.0008).toFixed(4),
+      date: d.toISOString(),
+      transferred: i%3===0,
+    });
+  }
+  return r;
+}
+function generateMockCommissions(n) {
+  const r=[];
+  for(let i=0;i<n;i++){
+    const d=new Date(2026,5,1+(i));
+    const amount=+(Math.random()*50+5).toFixed(2);
+    r.push({
+      id:'C'+(3000+i),
+      date: d.toISOString().split('T')[0],
+      amount,
+      currency:'USDT',
+      status: i%4===0?'pending':'transferred',
+      txHash: i%4===0?'—':'0x'+Math.random().toString(16).slice(2,12)+'...',
+      broker: i%2===0?'Binance':'Coinbase',
+    });
+  }
+  return r;
+}
+function generateMockAudit() {
+  const events=[
+    {type:'Admin Login',status:'ok',ip:'185.220.101.45',country:'🇮🇹',detail:'Chrome / Windows'},
+    {type:'⚠️ IP Sospetto',status:'warn',ip:'92.24.30.12',country:'🇺🇸',detail:'Nuovo paese rilevato'},
+    {type:'Modifica Commissione',status:'ok',ip:'185.220.101.45',country:'🇮🇹',detail:'Fee: 0.08% → 0.10%'},
+    {type:'Sospensione Utente',status:'warn',ip:'185.220.101.45',country:'🇮🇹',detail:'User U1004 sospeso'},
+    {type:'Trasferimento Fondi',status:'ok',ip:'185.220.101.45',country:'🇮🇹',detail:'$342.50 → Binance Broker'},
+    {type:'Modifica API Broker',status:'ok',ip:'185.220.101.45',country:'🇮🇹',detail:'Binance API aggiornata'},
+    {type:'⚠️ Tentativo Fallito',status:'warn',ip:'103.200.10.5',country:'🇨🇳',detail:'Password errata x3'},
+    {type:'Ticket Chiuso',status:'ok',ip:'185.220.101.45',country:'🇮🇹',detail:'T#105 risolto'},
+    {type:'2FA Attivato',status:'ok',ip:'185.220.101.45',country:'🇮🇹',detail:'TOTP abilitato'},
+    {type:'Admin Logout',status:'ok',ip:'185.220.101.45',country:'🇮🇹',detail:'Sessione terminata'},
+  ];
+  return events.map((e,i)=>({...e,date:'2026-06-'+(10-Math.floor(i/2))+' '+(19-i%5)+':'+String(i*7%60).padStart(2,'0')}));
+}
+function generateSysLogs() {
+  const logs=[
+    {level:'INFO', msg:'Server avviato correttamente', time:'19:45:01'},
+    {level:'INFO', msg:'WebSocket Binance connesso — BTC/USDT ticker', time:'19:45:02'},
+    {level:'WARN', msg:'IP 92.24.30.12 flagged come sospetto (geo mismatch)', time:'19:45:10'},
+    {level:'INFO', msg:'Commissione $8.42 ricevuta — Trade #H1729', time:'19:45:33'},
+    {level:'INFO', msg:'Trasferimento $342.50 → Binance Broker completato', time:'19:40:12'},
+    {level:'ERROR',msg:'Timeout connessione KuCoin API — retry in 30s', time:'19:38:55'},
+    {level:'INFO', msg:'Backup database eseguito con successo', time:'19:00:00'},
+    {level:'WARN', msg:'Utente U1004 sospeso per attività anomala', time:'18:55:22'},
+    {level:'INFO', msg:'2FA verificato — Admin login da 185.220.101.45', time:'18:50:14'},
+    {level:'INFO', msg:'Nuova registrazione utente: user42@email.com', time:'18:30:05'},
+  ];
+  return logs;
+}
+
+// ══════════════════════════════════════
+//  SECURITY: Anti-devtools
+// ══════════════════════════════════════
+// Hint primo accesso
+window.addEventListener('DOMContentLoaded', () => {
+  updateStatoDebug(); // Aggiorna barra stato hash/user
+  const stored = localStorage.getItem(ADMIN_HASH_KEY);
+  const loginFields = document.getElementById('login-fields');
+  const setupPanel  = document.getElementById('inline-setup-panel');
+  const hint        = document.getElementById('first-access-hint');
+  if (!stored) {
+    // Primo accesso: pannello setup inline
+    if (loginFields) loginFields.style.display = 'none';
+    if (setupPanel)  setupPanel.style.display  = 'block';
+    if (hint) hint.innerHTML = '<span style="color:#f97316;font-weight:700;">⚠️ Primo accesso — imposta le credenziali</span>';
+  } else {
+    // Già configurato: login normale
+    if (loginFields) loginFields.style.display = 'block';
+    if (setupPanel)  setupPanel.style.display  = 'none';
+    // Precompila username
+    const savedUser = localStorage.getItem('admin_username');
+    const userInput = document.getElementById('login-user');
+    if (savedUser && userInput) userInput.value = savedUser;
+    if (hint) hint.innerHTML = '<span style="color:#6b7280;font-size:10px;">Bentornato, ' + (savedUser||'admin') + '</span>';
+  }
+
+  // Rate-limit check
+  const d = getRateLimitData();
+  const now = Date.now();
+  if (d.blockedUntil > now) {
+    const m = Math.ceil((d.blockedUntil - now) / 60000);
+    const bl  = document.getElementById('login-block-msg');
+    const btn = document.getElementById('btn-reset-lockout');
+    if (bl)  { bl.style.display  = 'block'; bl.textContent = '🚫 Troppi tentativi. Riprova tra ' + m + ' minuti.'; }
+    if (btn) { btn.style.display = 'block'; }
+  }
+});
+
+
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('keydown',e=>{
+  if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C'].includes(e.key))||(e.ctrlKey&&e.key==='U')) e.preventDefault();
+});
+
+// ══════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════
+const f2  = n => (+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fD  = d => d?new Date(d).toLocaleString('it-IT').replace(',',''):'—';
+const fDS = d => d?new Date(d).toLocaleDateString('it-IT'):'—';
+// ─── SHA-256 / HASHING UTILITIES ────────────────────────────────
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function hmacSha256(secret, message) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+
+async function sha256WithSalt(msg) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const saltHex = Array.from(salt).map(b=>b.toString(16).padStart(2,'0')).join('');
+  const hash = await sha256(saltHex + msg);
+  return saltHex + ':' + hash;
+}
+
+async function verifySaltedHash(msg, stored) {
+  const [salt, hash] = stored.split(':');
+  const check = await sha256(salt + msg);
+  return check === hash;
+}
+
+// ─── PBKDF2 key derivation ──────────────────────────────────────
+async function deriveKeyPBKDF2(password, salt) {
+  const enc = new TextEncoder();
+  const keyMat = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name:'PBKDF2', salt: enc.encode(salt), iterations:100000, hash:'SHA-256' },
+    keyMat, 256
+  );
+  return Array.from(new Uint8Array(bits)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+// ────────────────────────────────────────────────────────────────
+function sanitize(v){return String(v||'').replace(/[<>"'`;&\\]/g,'').trim().slice(0,500);}
+
+// ══════════════════════════════════════
+//  LOGIN & RATE LIMIT
+// ══════════════════════════════════════
+let loginAttempts = 0;
+
+function updateRateBar() {
+  document.getElementById('attempts-label').textContent=loginAttempts+' / '+RATE_MAX;
+  document.getElementById('rate-fill').style.width=(loginAttempts/RATE_MAX*100)+'%';
+}
+
+function getRateLimitData() {
+  try{return JSON.parse(localStorage.getItem('admin_rl')||'{"count":0,"firstAt":0,"blockedUntil":0}');}catch{return{count:0,firstAt:0,blockedUntil:0};}
+}
+function checkRateLimit() {
+  const now=Date.now(), d=getRateLimitData();
+  if(d.blockedUntil>now){const m=Math.ceil((d.blockedUntil-now)/60000);return{ok:false,wait:m};}
+  if(now-d.firstAt>RATE_WINDOW){localStorage.setItem('admin_rl',JSON.stringify({count:1,firstAt:now,blockedUntil:0}));return{ok:true};}
+  if(d.count>=RATE_MAX){d.blockedUntil=now+BLOCK_TIME;localStorage.setItem('admin_rl',JSON.stringify(d));return{ok:false,wait:30};}
+  d.count++;localStorage.setItem('admin_rl',JSON.stringify(d));
+  loginAttempts=d.count;updateRateBar();
+  return{ok:true};
+}
+
+async function doLogin() {
+  const bl     = document.getElementById('login-block-msg');
+  const errEl  = document.getElementById('login-err');
+  const user   = sanitize(document.getElementById('login-user').value);
+  const pass   = document.getElementById('login-pass').value;
+
+  const storedHash = localStorage.getItem(ADMIN_HASH_KEY);
+
+  // Se nessuna password è mai stata impostata → primo accesso: setup diretto, SENZA rate limit
+  if (!storedHash) {
+    errEl.textContent = '';
+    bl.style.display = 'none';
+    // Mostra il pannello inline di setup (già presente nella pagina)
+    const loginFields = document.getElementById('login-fields');
+    const setupPanel  = document.getElementById('inline-setup-panel');
+    const hint        = document.getElementById('first-access-hint');
+    if (loginFields) loginFields.style.display = 'none';
+    if (setupPanel)  setupPanel.style.display  = 'block';
+    if (hint) hint.innerHTML = '<span style="color:#f97316;font-weight:700;">⚠️ Primo accesso — imposta le credenziali</span>';
+    return;
+  }
+
+  if (!user || !pass) { errEl.textContent = 'Compila tutti i campi.'; return; }
+
+  // Rate limit check — solo dopo aver confermato che la password esiste già
+  const rl = checkRateLimit();
+  if (!rl.ok) {
+    bl.style.display = 'block';
+    bl.textContent   = `🚫 Troppi tentativi falliti. Riprova tra ${rl.wait} minuti.`;
+    errEl.textContent = '';
+    const resetBtn = document.getElementById('btn-reset-lockout');
+    if(resetBtn) resetBtn.style.display = 'block';
+    return;
+  }
+
+  // Timing-safe: calcola hash anche se user è sbagliato
+  const passHash = await sha256(pass);
+  // Username configurabile — salvato in localStorage al setup
+  const storedUser = localStorage.getItem('admin_username') || 'admin';
+  const userOk     = (user === storedUser);
+  // Confronto timing-safe tramite HMAC
+  const ok = await timingSafeEqualStr(passHash, storedHash) && userOk;
+
+  // Ritardo artificiale anti-timing (80-180ms)
+  await new Promise(r => setTimeout(r, 80 + Math.random() * 100));
+
+  if (!ok) {
+    errEl.textContent = 'Credenziali non valide.';
+    return;
+  }
+
+  // Login OK
+  if (ADM.tfaEnabled) {
+    ADM.pendingAction = () => completeLogin();
+    renderOTPBoxes('verify-otp');
+    document.getElementById('modal-2fa-verify').style.display = 'flex';
+  } else {
+    completeLogin();
+  }
+}
+
+// Confronto timing-safe tra due stringhe (usato per hash password)
+async function timingSafeEqualStr(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const maxLen = Math.max(a.length, b.length);
+  const encA = new TextEncoder().encode(a.padEnd(maxLen, '0'));
+  const encB = new TextEncoder().encode(b.padEnd(maxLen, '0'));
+  const kA = await crypto.subtle.importKey('raw', encA, {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
+  const kB = await crypto.subtle.importKey('raw', encB, {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
+  const dummy = new TextEncoder().encode('pwd_compare_nonce');
+  const sA = await crypto.subtle.sign('HMAC', kA, dummy);
+  const sB = await crypto.subtle.sign('HMAC', kB, dummy);
+  const aA = new Uint8Array(sA), aB = new Uint8Array(sB);
+  let diff = 0;
+  for (let i = 0; i < aA.length; i++) diff |= (aA[i] ^ aB[i]);
+  return diff === 0 && a.length === b.length;
+}
+
+// Modal setup prima password (primo accesso)
+
+// ══════════════════════════════════════════════════
+//  INLINE FIRST-ACCESS SETUP
+// ══════════════════════════════════════════════════
+function checkInlinePwdStrength() {
+  const p = document.getElementById('setup-pwd-inline1').value;
+  const el = document.getElementById('inline-pwd-strength');
+  if (!p) { el.innerHTML = ''; return; }
+  let score = 0;
+  if (p.length >= 12) score++;
+  if (p.length >= 16) score++;
+  if (/[A-Z]/.test(p)) score++;
+  if (/[0-9]/.test(p)) score++;
+  if (/[^A-Za-z0-9]/.test(p)) score++;
+  const colors = ['','#ef4444','#f59e0b','#f59e0b','#10b981','#10b981'];
+  const labels = ['','Debole','Debole','Media','Forte','Molto Forte'];
+  const c = colors[score] || '#ef4444';
+  const l = labels[score] || 'Debole';
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:6px;margin-top:4px;">' +
+    Array.from({length:5},(_,i)=>'<div style="flex:1;height:3px;border-radius:2px;background:'+(i<score?c:'rgba(255,255,255,0.1)')+'"></div>').join('') +
+    '<span style="font-size:10px;color:'+c+';white-space:nowrap;">'+l+'</span></div>';
+}
+
+async function saveInlineSetup() {
+  const p1  = document.getElementById('setup-pwd-inline1').value;
+  const p2  = document.getElementById('setup-pwd-inline2').value;
+  const usr = document.getElementById('setup-user-inline').value.trim() || 'cryptoadmin';
+  const err = document.getElementById('inline-setup-err');
+  if (usr.length < 3) { err.textContent = '⚠️ Username troppo corto (min. 3 caratteri).'; return; }
+  if (p1.length < 12) { err.textContent = '⚠️ Password min. 12 caratteri.'; return; }
+  if (!/[A-Z]/.test(p1)) { err.textContent = '⚠️ Inserisci almeno una lettera maiuscola.'; return; }
+  if (!/[0-9]/.test(p1)) { err.textContent = '⚠️ Inserisci almeno un numero.'; return; }
+  if (p1 !== p2) { err.textContent = '⚠️ Le password non coincidono.'; return; }
+  err.textContent = '';
+  const hash = await sha256(p1);
+  localStorage.setItem('admin_username', usr);
+  localStorage.setItem(ADMIN_HASH_KEY, hash);
+  // Reset rate limiter
+  localStorage.removeItem('admin_rl');
+  showToast('✅ Credenziali impostate! Accesso in corso...', '#10b981');
+  setTimeout(() => {
+    completeLogin();
+    addAuditEntry('Impostazione Credenziali Admin','ok','locale','🔑','Prime credenziali admin configurate');
+  }, 800);
+}
+
+function showResetConfirm() {
+  document.getElementById('reset-confirm-box').style.display = 'block';
+  document.getElementById('btn-reset-creds').style.display = 'none';
+}
+function cancelReset() {
+  document.getElementById('reset-confirm-box').style.display = 'none';
+  document.getElementById('btn-reset-creds').style.display = 'inline-block';
+}
+function doReset() {
+  localStorage.removeItem('admin_pwd_hash');
+  localStorage.removeItem('admin_username');
+  localStorage.removeItem('admin_rl');
+  loginAttempts = 0;
+  if (typeof updateRateBar === 'function') updateRateBar();
+  if (typeof showToast === 'function') showToast('✅ Credenziali resettate!', '#10b981');
+  document.getElementById('reset-confirm-box').style.display = 'none';
+  const loginFields = document.getElementById('login-fields');
+  const setupPanel  = document.getElementById('inline-setup-panel');
+  const hint        = document.getElementById('first-access-hint');
+  if (loginFields) loginFields.style.display = 'none';
+  if (setupPanel)  setupPanel.style.display  = 'block';
+  if (hint) hint.innerHTML = '<span style="color:#f97316;font-weight:700;">⚠️ Imposta le nuove credenziali</span>';
+}
+function resetAdminCredentials() { showResetConfirm(); }
+// ── RESET TUTTO (solo admin, accessibile dalla barra stato) ──
+function adminResetTutto() {
+  if (!confirm('⚠️ Sei sicuro? Questo cancella password, username e tutti i dati di accesso admin.\nDovrai reimpostare tutto al prossimo accesso.')) return;
+  ['admin_pwd_hash','admin_username','admin_nonce','admin_rl','admin_session'].forEach(k => localStorage.removeItem(k));
+  location.reload();
+}
+
+// Aggiorna la barra di stato debug
+function updateStatoDebug() {
+  const hashEl = document.getElementById('dbg-hash');
+  const userEl = document.getElementById('dbg-user');
+  if (!hashEl || !userEl) return;
+  const hasHash = !!localStorage.getItem('admin_pwd_hash');
+  const hasUser = !!localStorage.getItem('admin_username');
+  hashEl.innerHTML = hasHash ? '<span style="color:#10b981;">✅</span>' : '<span style="color:#ef4444;">❌</span>';
+  userEl.innerHTML = hasUser ? '<span style="color:#10b981;">✅</span>' : '<span style="color:#ef4444;">❌</span>';
+}
+
+function resetLockout() {
+  localStorage.removeItem('admin_rl');
+  loginAttempts = 0;
+  updateRateBar();
+  const bl = document.getElementById('login-block-msg');
+  const btn = document.getElementById('btn-reset-lockout');
+  if(bl){ bl.style.display='none'; bl.textContent=''; }
+  if(btn) btn.style.display='none';
+  document.getElementById('login-err').textContent = '✅ Blocco rimosso. Puoi riprovare.';
+}
+
+function showSetupPasswordModal() {
+  // Rimuovi eventuale modal precedente
+  document.getElementById('modal-setup-pwd')?.remove();
+  const m = document.createElement('div');
+  m.id = 'modal-setup-pwd';
+  m.className = 'overlay';
+  m.innerHTML = `
+    <div class="modal" style="max-width:380px;">
+      <div class="modal-title">🔑 Imposta Password Admin</div>
+      <div class="modal-sub">
+        Primo accesso rilevato.<br>
+        Scegli la tua password personale. Verrà salvata solo su questo dispositivo come hash SHA-256 — nessuno la conosce tranne te.
+      </div>
+      <div style="margin-bottom:10px;">
+        <div class="lbl">Username Admin</div>
+        <input type="text" id="setup-username" class="inp" placeholder="Scegli il tuo username admin" autocomplete="username"/>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">Evita 'admin' o 'root' — scegli qualcosa di unico.</div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div class="lbl">Nuova Password (min. 12 caratteri)</div>
+        <div class="inp-wrap">
+          <input type="password" id="setup-pwd1" class="inp" placeholder="Scegli una password sicura" autocomplete="new-password"/>
+          <button class="eye-btn" onclick="toggleVis('setup-pwd1',this)">👁</button>
+        </div>
+      </div>
+      <div style="margin-bottom:6px;">
+        <div class="lbl">Conferma Password</div>
+        <div class="inp-wrap">
+          <input type="password" id="setup-pwd2" class="inp" placeholder="Ripeti la password" autocomplete="new-password"/>
+          <button class="eye-btn" onclick="toggleVis('setup-pwd2',this)">👁</button>
+        </div>
+      </div>
+      <div id="setup-pwd-strength" style="margin-bottom:8px;"></div>
+      <div id="setup-pwd-err" style="color:var(--red);font-size:11px;min-height:14px;margin-bottom:8px;"></div>
+      <div class="info-box" style="margin-bottom:12px;font-size:10px;">
+        🛡 La password viene trasformata in hash SHA-256 e salvata in <code>localStorage</code>.<br>
+        Non viene mai inviata a nessun server. Solo tu puoi accedere.
+      </div>
+      <button class="btn-lg btn-admin" onclick="saveSetupPassword()">🔐 Imposta Password e Accedi</button>
+    </div>`;
+  document.body.appendChild(m);
+  document.getElementById('setup-pwd1').addEventListener('input', checkPwdStrength);
+}
+
+function checkPwdStrength() {
+  const p = document.getElementById('setup-pwd1').value;
+  const el = document.getElementById('setup-pwd-strength');
+  if (!p) { el.innerHTML = ''; return; }
+  let score = 0;
+  if (p.length >= 12) score++;
+  if (p.length >= 16) score++;
+  if (/[A-Z]/.test(p)) score++;
+  if (/[0-9]/.test(p)) score++;
+  if (/[^A-Za-z0-9]/.test(p)) score++;
+  const labels = ['','Debole','Debole','Media','Forte','Molto Forte'];
+  const colors = ['','#ef4444','#f59e0b','#f59e0b','#10b981','#10b981'];
+  el.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+    ${Array.from({length:5},(_,i)=>`<div style="flex:1;height:3px;border-radius:2px;background:${i<score?colors[score]:'rgba(255,255,255,0.1)'}"></div>`).join('')}
+    <span style="font-size:10px;color:${colors[score]};white-space:nowrap;">${labels[score]}</span>
+  </div>`;
+}
+
+async function saveSetupPassword() {
+  const p1  = document.getElementById('setup-pwd1').value;
+  const p2  = document.getElementById('setup-pwd2').value;
+  const err = document.getElementById('setup-pwd-err');
+  if (p1.length < 12) { err.textContent = '⚠️ Minimo 12 caratteri.'; return; }
+  if (p1 !== p2)       { err.textContent = '⚠️ Le password non coincidono.'; return; }
+  if (!/[A-Z]/.test(p1)) { err.textContent = '⚠️ Inserisci almeno una lettera maiuscola.'; return; }
+  if (!/[0-9]/.test(p1)) { err.textContent = '⚠️ Inserisci almeno un numero.'; return; }
+  const hash = await sha256(p1);
+  const chosenUser = document.getElementById('setup-username').value.trim() || 'admin';
+  localStorage.setItem('admin_username', chosenUser);
+  localStorage.setItem(ADMIN_HASH_KEY, hash);
+  document.getElementById('modal-setup-pwd').remove();
+  showToast('✅ Password impostata. Accesso in corso...', '#10b981');
+  // Completa login direttamente (l'utente è già "autenticato" dal setup)
+  completeLogin();
+  addAuditEntry('Impostazione Password Admin','ok','locale','🔑','Prima password admin configurata');
+}
+
+function completeLogin(){
+  // Aggiorna chip con username reale
+  const uChip = document.getElementById('admin-user-chip');
+  if (uChip) uChip.textContent = localStorage.getItem('admin_username') || 'admin';
+  ADM.loggedIn=true;
+  ADM.sessionEnd=Date.now()+SESSION_MS;
+  localStorage.setItem('admin_rl',JSON.stringify({count:0,firstAt:0,blockedUntil:0}));
+  loginAttempts=0;updateRateBar();
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-app').style.display='flex';
+  startSessionTimer();
+  loadTab('dashboard');
+  addAuditEntry('Admin Login','ok','185.220.101.45','🇮🇹','Browser / Windows');
+  showToast('✅ Accesso admin effettuato','#10b981');
+}
+
+function adminLogout(){
+  ADM.loggedIn=false;
+  addAuditEntry('Admin Logout','ok','185.220.101.45','🇮🇹','Sessione terminata');
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-pass').value='';
+}
+
+// Session timer
+let sessionInterval;
+function startSessionTimer(){
+  clearInterval(sessionInterval);
+  sessionInterval=setInterval(()=>{
+    const left=ADM.sessionEnd-Date.now();
+    if(left<=0){clearInterval(sessionInterval);adminLogout();showToast('⏰ Sessione scaduta','#f59e0b');return;}
+    const m=Math.floor(left/60000),s=Math.floor((left%60000)/1000);
+    document.getElementById('session-timer').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  },1000);
+}
+
+// ══════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════
+function showTab(tab){
+  ADM.currentTab=tab;
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('nav-'+tab)?.classList.add('active');
+  loadTab(tab);
+}
+function loadTab(tab){
+  const c=document.getElementById('tab-content');
+  c.innerHTML='';
+  const fn={
+    dashboard:  renderDashboard,
+    users:      renderUsers,
+    tickets:    renderTickets,
+    revenue:    renderRevenue,
+    broker:     renderBroker,
+    commissions:renderCommissions,
+    exchanges:  renderExchanges,
+    security:   renderSecurity,
+    audit:      renderAudit,
+    sessions:   renderSessions,
+    settings:   renderSettings,
+    logs:       renderLogs,
+    feedback:   renderFeedbackTab,
+    defi_mgmt:  renderDefiMgmt,
+    stocks_cfg: renderStocksCfg,
+    premium:    renderPremium,
+    kyc_mgmt:   renderKycMgmt,
+    notif_cfg:  renderNotifCfg,
+    analytics:  renderAnalytics,
+  }[tab];
+  if(fn) fn();
+  // Aggiorna badge
+  document.getElementById('nb-users').textContent   = ADM.users.filter(u=>u.status==='active').length;
+  // badge nuovi
+  const premiumCount = ADM.users.filter(u=>!u.premium).length;
+  const kycPending   = ADM.users.filter(u=>u.kyc==='pending').length;
+  const nbPrem = document.getElementById('nb-premium'); if(nbPrem) nbPrem.textContent = premiumCount;
+  const nbKyc  = document.getElementById('nb-kyc');     if(nbKyc)  nbKyc.textContent  = kycPending;
+  document.getElementById('nb-tickets').textContent  = ADM.tickets.filter(t=>t.status!=='closed').length;
+  document.getElementById('nb-sessions').textContent = ADM.adminSessions.length;
+}
+
+// ══════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════
+function renderDashboard(){
+  const totalFees  = ADM.revenue.reduce((s,r)=>s+r.fee,0);
+  const totalVol   = ADM.revenue.reduce((s,r)=>s+r.orderUSD,0);
+  const activeU    = ADM.users.filter(u=>u.status==='active').length;
+  const openT      = ADM.tickets.filter(t=>t.status!=='closed').length;
+  const pendComm   = ADM.commissions.filter(c=>c.status==='pending').reduce((s,c)=>s+c.amount,0);
+  const transferred= ADM.commissions.filter(c=>c.status==='transferred').reduce((s,c)=>s+c.amount,0);
+
+  document.getElementById('tab-content').innerHTML=`
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px;">
+    <div class="kpi red"><div class="kpi-label">Commissioni Totali</div><div class="kpi-value" style="color:var(--admin)">$${f2(totalFees)}</div><div class="kpi-sub">da ${ADM.revenue.length} trade</div><div class="kpi-icon">💰</div></div>
+    <div class="kpi green"><div class="kpi-label">Trasferite</div><div class="kpi-value" style="color:var(--green)">$${f2(transferred)}</div><div class="kpi-sub">al broker</div><div class="kpi-icon">✅</div></div>
+    <div class="kpi yellow"><div class="kpi-label">Da Trasferire</div><div class="kpi-value" style="color:var(--yellow)">$${f2(pendComm)}</div><div class="kpi-sub">in attesa</div><div class="kpi-icon">⏳</div></div>
+    <div class="kpi blue"><div class="kpi-label">Volume Totale</div><div class="kpi-value" style="color:var(--cyan)">$${f2(totalVol)}</div><div class="kpi-sub">tutti gli exchange</div><div class="kpi-icon">📈</div></div>
+    <div class="kpi purple"><div class="kpi-label">Utenti Attivi</div><div class="kpi-value" style="color:var(--purple)">${activeU}</div><div class="kpi-sub">su ${ADM.users.length} totali</div><div class="kpi-icon">👥</div></div>
+    <div class="kpi cyan"><div class="kpi-label">Ticket Aperti</div><div class="kpi-value" style="color:var(--cyan)">${openT}</div><div class="kpi-sub">da risolvere</div><div class="kpi-icon">🎫</div></div>
+  </div>
+
+  <!-- Ultimi trade + eventi sicurezza -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">💰 Ultimi Trade & Commissioni</span><button class="btn btn-ghost" onclick="showTab('revenue')" style="font-size:10px;">Vedi tutti</button></div>
+      <div style="overflow:auto;max-height:260px;">
+        <table class="dt"><thead><tr><th>Utente</th><th>Coppia</th><th>Tipo</th><th>Ordine</th><th>Fee</th><th>Data</th></tr></thead>
+        <tbody>${ADM.revenue.slice(0,10).map(r=>`<tr class="fade-in">
+          <td>${r.userName}</td><td>${r.pair}</td>
+          <td><span class="badge ${r.side==='buy'?'bg-ok':'bg-err'}">${r.side.toUpperCase()}</span></td>
+          <td>$${f2(r.orderUSD)}</td>
+          <td style="color:var(--yellow);font-weight:700">$${r.fee.toFixed(4)}</td>
+          <td style="color:var(--muted)">${fDS(r.date)}</td>
+        </tr>`).join('')}</tbody></table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">🛡 Ultimi Eventi Sicurezza</span><button class="btn btn-ghost" onclick="showTab('audit')" style="font-size:10px;">Vedi tutti</button></div>
+      <div style="overflow:auto;max-height:260px;">
+        <table class="dt"><thead><tr><th>Evento</th><th>Stato</th><th>IP</th><th>Data</th></tr></thead>
+        <tbody>${ADM.auditLog.slice(0,8).map(e=>`<tr class="fade-in">
+          <td>${e.type}</td>
+          <td><span class="badge ${e.status==='ok'?'bg-ok':'bg-err blink'}">${e.status==='ok'?'OK':'⚠ Allerta'}</span></td>
+          <td style="font-size:10px">${e.ip}</td>
+          <td style="color:var(--muted)">${e.date}</td>
+        </tr>`).join('')}</tbody></table>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════
+//  USERS
+// ══════════════════════════════════════
+function renderUsers(filter='all',q=''){
+  let list=ADM.users;
+  if(filter==='active') list=list.filter(u=>u.status==='active');
+  if(filter==='suspended') list=list.filter(u=>u.status==='suspended');
+  if(filter==='pending') list=list.filter(u=>u.status==='pending');
+  if(q) list=list.filter(u=>u.name.toLowerCase().includes(q.toLowerCase())||u.email.toLowerCase().includes(q.toLowerCase())||u.id.toLowerCase().includes(q.toLowerCase()));
+
+  document.getElementById('tab-content').innerHTML=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    <div class="section-title" style="margin:0;">👥 Gestione Utenti</div>
+    <div style="display:flex;gap:5px;margin-left:auto;flex-wrap:wrap;">
+      ${['all','active','suspended','pending'].map(f=>`<button onclick="renderUsers('${f}',document.getElementById('user-search').value)" class="btn ${filter===f?'btn-admin':'btn-ghost'}" style="font-size:10px;padding:4px 10px;">${f==='all'?'Tutti':f.charAt(0).toUpperCase()+f.slice(1)}</button>`).join('')}
+      <input type="text" id="user-search" class="inp" placeholder="Cerca..." style="width:160px;padding:4px 8px;font-size:11px;" value="${q}" oninput="renderUsers('${filter}',this.value)"/>
+    </div>
+  </div>
+  <div class="card">
+    <div style="overflow:auto;">
+      <table class="dt"><thead><tr>
+        <th>ID</th><th>Nome</th><th>Email</th><th>Status</th><th>Exchange</th><th>Volume</th><th>Fee Tot.</th><th>Trades</th><th>KYC</th><th>2FA</th><th>Paese</th><th>Registrato</th><th>Azioni</th>
+      </tr></thead>
+      <tbody>${list.map(u=>`<tr class="fade-in">
+        <td style="color:var(--muted)">${u.id}</td>
+        <td style="font-weight:600;font-family:'Inter',sans-serif;">${u.name}</td>
+        <td style="color:var(--muted);font-size:10px;">${u.email}</td>
+        <td><span class="badge ${u.status==='active'?'bg-ok':u.status==='suspended'?'bg-err':'bg-warn'}">${u.status}</span></td>
+        <td>${u.exchange}</td>
+        <td>$${f2(u.volume)}</td>
+        <td style="color:var(--yellow);font-weight:700">$${f2(u.fees)}</td>
+        <td>${u.trades}</td>
+        <td><span class="badge ${u.kyc==='verified'?'bg-ok':'bg-warn'}">${u.kyc}</span></td>
+        <td>${u.tfa?'<span class="badge bg-ok">ON</span>':'<span class="badge bg-muted">OFF</span>'}</td>
+        <td style="font-size:10px">${u.country}</td>
+        <td style="color:var(--muted)">${fDS(u.created_date)}</td>
+        <td>
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-ghost" onclick="openUserModal('${u.id}')" style="font-size:9px;padding:2px 7px;" title="Dettagli">👁</button>
+            <button class="btn ${u.status==='active'?'btn-danger':'btn-green'}" onclick="toggleUserStatus('${u.id}')" style="font-size:9px;padding:2px 7px;" title="${u.status==='active'?'Sospendi':'Riattiva'}">${u.status==='active'?'🚫':'✅'}</button>
+            <button class="btn btn-blue" onclick="resetUserPwd('${u.id}')" style="font-size:9px;padding:2px 7px;" title="Reset password">🔑</button>
+          </div>
+        </td>
+      </tr>`).join('')}</tbody></table>
+    </div>
+  </div>`;
+}
+
+function openUserModal(uid){
+  const u=ADM.users.find(u=>u.id===uid); if(!u) return;
+  document.getElementById('modal-user-content').innerHTML=`
+    <div class="modal-title">👤 ${u.name}</div>
+    <div class="modal-sub">${u.email} · ${u.id}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div><div class="lbl">Status</div><span class="badge ${u.status==='active'?'bg-ok':'bg-err'}">${u.status}</span></div>
+      <div><div class="lbl">KYC</div><span class="badge ${u.kyc==='verified'?'bg-ok':'bg-warn'}">${u.kyc}</span></div>
+      <div><div class="lbl">Volume Totale</div><span style="font-family:'JetBrains Mono',monospace;color:var(--cyan)">$${f2(u.volume)}</span></div>
+      <div><div class="lbl">Commissioni Generate</div><span style="font-family:'JetBrains Mono',monospace;color:var(--yellow)">$${f2(u.fees)}</span></div>
+      <div><div class="lbl">Trade Totali</div><span style="font-family:'JetBrains Mono',monospace">${u.trades}</span></div>
+      <div><div class="lbl">Exchange</div><span>${u.exchange}</span></div>
+      <div><div class="lbl">2FA</div>${u.tfa?'<span class="badge bg-ok">Attivo</span>':'<span class="badge bg-muted">Disattivo</span>'}</div>
+      <div><div class="lbl">IP Ultimo Login</div><span style="font-family:'JetBrains Mono',monospace;font-size:10px">${u.ip}</span></div>
+      <div><div class="lbl">Registrato</div><span>${fDS(u.created_date)}</span></div>
+      <div><div class="lbl">Ultimo Login</div><span>${fD(u.last_login)}</span></div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div class="lbl">Note interne</div>
+      <textarea id="user-note" class="inp" rows="3" style="resize:none;">${u.note}</textarea>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-admin" onclick="saveNote('${u.id}')">💾 Salva Note</button>
+      <button class="btn ${u.status==='active'?'btn-danger':'btn-green'}" onclick="toggleUserStatus('${u.id}');closeModal('modal-user');renderUsers()">${u.status==='active'?'🚫 Sospendi':'✅ Riattiva'}</button>
+      <button class="btn btn-blue" onclick="resetUserPwd('${u.id}')">🔑 Reset Password</button>
+    </div>`;
+  document.getElementById('modal-user').style.display='flex';
+}
+function saveNote(uid){
+  const u=ADM.users.find(u=>u.id===uid); if(!u) return;
+  u.note=document.getElementById('user-note').value;
+  showToast('✅ Note salvate','#10b981');
+}
+function toggleUserStatus(uid){
+  const u=ADM.users.find(u=>u.id===uid); if(!u) return;
+  u.status=u.status==='active'?'suspended':'active';
+  addAuditEntry(u.status==='suspended'?'Sospensione Utente':'Riattivazione Utente','warn','185.220.101.45','🇮🇹','User '+uid);
+  showToast(`${u.status==='active'?'✅ Utente riattivato':'🚫 Utente sospeso'}: ${u.name}`,u.status==='active'?'#10b981':'#ef4444');
+  renderUsers();
+}
+function resetUserPwd(uid){
+  const u=ADM.users.find(u=>u.id===uid); if(!u) return;
+  const token='reset_'+Math.random().toString(36).slice(2,12);
+  showToast(`🔑 Token reset generato per ${u.name}:\n${token}`,'#6366f1');
+  addAuditEntry('Reset Password','ok','185.220.101.45','🇮🇹','User '+uid);
+}
+
+// ══════════════════════════════════════
+//  TICKETS
+// ══════════════════════════════════════
+function renderTickets(filter='all'){
+  let list=ADM.tickets;
+  if(filter!=='all') list=list.filter(t=>t.status===filter);
+  document.getElementById('tab-content').innerHTML=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    <div class="section-title" style="margin:0;">🎫 Ticket Supporto</div>
+    <div style="display:flex;gap:5px;margin-left:auto;">
+      ${['all','open','pending','closed'].map(f=>`<button onclick="renderTickets('${f}')" class="btn ${filter===f?'btn-admin':'btn-ghost'}" style="font-size:10px;padding:4px 10px;">${f==='all'?'Tutti':f.charAt(0).toUpperCase()+f.slice(1)}</button>`).join('')}
+    </div>
+  </div>
+  <div class="card"><div style="overflow:auto;">
+    <table class="dt"><thead><tr><th>ID</th><th>Utente</th><th>Oggetto</th><th>Priorità</th><th>Status</th><th>Data</th><th>Azioni</th></tr></thead>
+    <tbody>${list.map(t=>`<tr class="fade-in">
+      <td style="color:var(--muted)">#${t.id}</td>
+      <td>${t.userName}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-family:'Inter',sans-serif;">${t.subject}</td>
+      <td><span class="badge ${t.priority==='high'?'bg-err':t.priority==='medium'?'bg-warn':'bg-muted'}">${t.priority}</span></td>
+      <td><span class="badge ${t.status==='open'?'bg-err':t.status==='pending'?'bg-warn':'bg-ok'}">${t.status}</span></td>
+      <td style="color:var(--muted)">${fDS(t.created_date)}</td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-blue" onclick="openTicketModal('${t.id}')" style="font-size:9px;padding:2px 7px;">Apri</button>
+          ${t.status!=='closed'?`<button class="btn btn-ghost" onclick="closeTicket('${t.id}')" style="font-size:9px;padding:2px 7px;">Chiudi</button>`:''}
+        </div>
+      </td>
+    </tr>`).join('')}</tbody></table>
+  </div></div>`;
+}
+
+function openTicketModal(tid){
+  const t=ADM.tickets.find(t=>t.id===tid); if(!t) return;
+  document.getElementById('modal-ticket-content').innerHTML=`
+    <div class="modal-title">🎫 Ticket #${t.id}</div>
+    <div class="modal-sub">${t.subject} · <span class="badge ${t.priority==='high'?'bg-err':'bg-warn'}">${t.priority}</span></div>
+    <div style="max-height:220px;overflow:auto;margin-bottom:12px;display:flex;flex-direction:column;gap:8px;">
+      ${t.messages.map(m=>`<div style="padding:8px 12px;border-radius:8px;font-size:11px;line-height:1.6;${m.from==='admin'?'background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);margin-left:20px;':'background:rgba(255,255,255,.04);border:1px solid var(--b);margin-right:20px;'}">
+        <div style="font-size:9px;color:var(--muted);margin-bottom:3px;">${m.from==='admin'?'👤 Admin':'👥 Utente'} · ${fD(m.date)}</div>
+        ${m.text}
+      </div>`).join('')}
+    </div>
+    <div style="margin-bottom:10px;">
+      <div class="lbl">Risposta</div>
+      <textarea id="ticket-reply" class="inp" rows="3" placeholder="Scrivi la tua risposta..." style="resize:none;"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-admin" onclick="replyTicket('${t.id}')">📨 Invia Risposta</button>
+      ${t.status!=='closed'?`<button class="btn btn-ghost" onclick="closeTicket('${t.id}');closeModal('modal-ticket');renderTickets()">✅ Chiudi Ticket</button>`:''}
+    </div>`;
+  document.getElementById('modal-ticket').style.display='flex';
+}
+function replyTicket(tid){
+  const t=ADM.tickets.find(t=>t.id===tid); if(!t) return;
+  const txt=document.getElementById('ticket-reply').value.trim();
+  if(!txt){showToast('⚠️ Messaggio vuoto','#f59e0b');return;}
+  t.messages.push({from:'admin',text:txt,date:new Date().toISOString()});
+  t.status='pending';
+  document.getElementById('ticket-reply').value='';
+  showToast('📨 Risposta inviata','#10b981');
+  openTicketModal(tid);
+}
+function closeTicket(tid){
+  const t=ADM.tickets.find(t=>t.id===tid); if(!t) return;
+  t.status='closed';
+  showToast('✅ Ticket chiuso','#10b981');
+  addAuditEntry('Ticket Chiuso','ok','185.220.101.45','🇮🇹','#'+tid);
+}
+
+// ══════════════════════════════════════
+//  REVENUE
+// ══════════════════════════════════════
+function renderRevenue(){
+  const total=ADM.revenue.reduce((s,r)=>s+r.fee,0);
+  const vol  =ADM.revenue.reduce((s,r)=>s+r.orderUSD,0);
+  document.getElementById('tab-content').innerHTML=`
+  <div class="section-title">💰 Revenue & Commissioni Ricevute</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:14px;">
+    <div class="kpi red"><div class="kpi-label">Fee Totali Ricevute</div><div class="kpi-value" style="color:var(--admin)">$${f2(total)}</div><div class="kpi-icon">💰</div></div>
+    <div class="kpi blue"><div class="kpi-label">Volume Scambiato</div><div class="kpi-value" style="color:var(--cyan)">$${f2(vol)}</div><div class="kpi-icon">📈</div></div>
+    <div class="kpi green"><div class="kpi-label">Trade Processati</div><div class="kpi-value" style="color:var(--green)">${ADM.revenue.length}</div><div class="kpi-icon">⚡</div></div>
+    <div class="kpi yellow"><div class="kpi-label">Fee Media</div><div class="kpi-value" style="color:var(--yellow)">$${f2(total/ADM.revenue.length||0)}</div><div class="kpi-icon">%</div></div>
+  </div>
+  <div class="card"><div style="overflow:auto;max-height:calc(100vh-380px);">
+    <table class="dt"><thead><tr><th>ID</th><th>Utente</th><th>Coppia</th><th>Tipo</th><th>Lato</th><th>Ordine USD</th><th>Fee (0.08%)</th><th>Data</th><th>Trasferito</th></tr></thead>
+    <tbody>${ADM.revenue.map(r=>`<tr class="fade-in">
+      <td style="color:var(--muted)">${r.id}</td>
+      <td>${r.userName}</td><td>${r.pair}</td><td>${r.type}</td>
+      <td><span class="badge ${r.side==='buy'?'bg-ok':'bg-err'}">${r.side.toUpperCase()}</span></td>
+      <td>$${f2(r.orderUSD)}</td>
+      <td style="color:var(--yellow);font-weight:700">$${r.fee.toFixed(4)}</td>
+      <td style="color:var(--muted)">${fDS(r.date)}</td>
+      <td><span class="badge ${r.transferred?'bg-ok':'bg-warn'}">${r.transferred?'Sì':'Pendente'}</span></td>
+    </tr>`).join('')}</tbody></table>
+  </div></div>`;
+}
+
+// ══════════════════════════════════════
+//  BROKER API — TRASFERIMENTO COMMISSIONI
+// ══════════════════════════════════════
+function renderBroker(){
+  const bc=ADM.brokerConfig;
+  const brokers=[
+    {id:'binance',  name:'Binance',    icon:'🟡',color:'#f3ba2f',desc:'API Spot per ricevere commissioni direttamente sul conto Binance'},
+    {id:'coinbase', name:'Coinbase',   icon:'🔵',color:'#0052ff',desc:'Coinbase Commerce o Advanced Trade API'},
+    {id:'kraken',   name:'Kraken',     icon:'🟣',color:'#5741d9',desc:'Kraken API per deposito fondi broker'},
+    {id:'kucoin',   name:'KuCoin',     icon:'🟢',color:'#23af91',desc:'KuCoin API per gestione commissioni'},
+    {id:'bybit',    name:'Bybit',      icon:'🟠',color:'#f7a600',desc:'Bybit Spot API'},
+    {id:'manual',   name:'Wallet Manuale',icon:'⚫',color:'#ffffff',desc:'Indirizzo wallet USDT/BTC per trasferimenti manuali'},
+  ];
+
+  document.getElementById('tab-content').innerHTML=`
+  <div class="section-title">🏦 Broker API — Trasferimento Commissioni</div>
+
+  <!-- Flusso commissioni -->
+  <div class="commission-flow" style="margin-bottom:16px;">
+    <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--txt);">💸 Flusso Commissioni</div>
+    <div class="flow-arrow">
+      <div class="flow-box" style="color:var(--accent2);">👤 Trade Utente<br><span style="font-size:9px;color:var(--muted)">Fee 0.08%</span></div>
+      <span>→</span>
+      <div class="flow-box" style="color:var(--yellow);">🏦 CryptoTrade Pro<br><span style="font-size:9px;color:var(--muted)">Pool commissioni</span></div>
+      <span>→</span>
+      <div class="flow-box" style="color:var(--green);">✅ Broker Selezionato<br><span style="font-size:9px;color:var(--muted)">${bc.active.toUpperCase()}</span></div>
+    </div>
+  </div>
+
+  <!-- Broker attivo -->
+  <div style="margin-bottom:14px;">
+    <div class="lbl" style="margin-bottom:6px;">Exchange / Broker di destinazione</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      ${brokers.map(b=>`<button onclick="setActiveBroker('${b.id}')" class="btn ${bc.active===b.id?'btn-admin':'btn-ghost'}" style="font-size:11px;">
+        ${b.icon} ${b.name} ${bc.active===b.id?'✓':''}
+      </button>`).join('')}
+    </div>
+  </div>
+
+  <!-- Config broker selezionato -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+    ${brokers.filter(b=>b.id!=='manual').map(b=>`
+    <div class="broker-card ${bc.active===b.id?'active-broker':''}" id="broker-section-${b.id}" style="${bc.active===b.id?'':'opacity:.5;'}">
+      <div class="broker-logo" style="color:${b.color}">${b.icon}</div>
+      <div class="broker-name">${b.name}</div>
+      <div class="broker-status" style="color:${bc.keys[b.id]?'var(--green)':'var(--muted)'};">${bc.keys[b.id]?'● Configurato':'○ Non configurato'}</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">${b.desc}</div>
+      <div style="margin-bottom:6px;">
+        <div class="lbl">API Key</div>
+        <div class="inp-wrap"><input type="password" id="bk-${b.id}-key" class="inp" placeholder="API Key broker" style="font-size:11px;"/><button class="eye-btn" onclick="toggleVis('bk-${b.id}-key',this)">👁</button></div>
+      </div>
+      <div style="margin-bottom:6px;">
+        <div class="lbl">Secret Key</div>
+        <div class="inp-wrap"><input type="password" id="bk-${b.id}-secret" class="inp" placeholder="Secret Key" style="font-size:11px;"/><button class="eye-btn" onclick="toggleVis('bk-${b.id}-secret',this)">👁</button></div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div class="lbl">Wallet/Indirizzo di Destinazione (USDT)</div>
+        <input type="text" id="bk-${b.id}-wallet" class="inp" placeholder="Indirizzo wallet destinazione" value="${bc.wallets[b.id]||''}" style="font-size:11px;"/>
+      </div>
+      <button class="btn btn-admin" onclick="saveBrokerKey('${b.id}')" style="width:100%;font-size:11px;">🔐 Cifra e Salva Credenziali</button>
+    </div>`).join('')}
+
+    <!-- Manual wallet -->
+    <div class="broker-card ${bc.active==='manual'?'active-broker':''}" style="${bc.active==='manual'?'':'opacity:.5;'}">
+      <div class="broker-logo">⚫</div>
+      <div class="broker-name">Wallet Manuale</div>
+      <div class="broker-status" style="color:var(--muted);">Trasferimento manuale</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Indirizzo wallet USDT (TRC20/ERC20/BEP20)</div>
+      <div style="margin-bottom:6px;">
+        <div class="lbl">Indirizzo Wallet USDT</div>
+        <input type="text" id="bk-manual-wallet" class="inp" placeholder="0x... o T..." value="${bc.wallets.manual||''}" style="font-size:11px;"/>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div class="lbl">Rete</div>
+        <select id="bk-manual-network" class="inp" style="padding:6px 8px;font-size:11px;">
+          <option value="trc20">TRC20 (Tron)</option>
+          <option value="erc20">ERC20 (Ethereum)</option>
+          <option value="bep20">BEP20 (BSC)</option>
+          <option value="sol">Solana (SOL)</option>
+        </select>
+      </div>
+      <button class="btn btn-admin" onclick="saveBrokerKey('manual')" style="width:100%;font-size:11px;">💾 Salva Wallet</button>
+    </div>
+  </div>
+
+  <!-- Auto-transfer settings -->
+  <div class="card" style="padding:16px;margin-bottom:14px;">
+    <div style="font-size:12px;font-weight:700;margin-bottom:10px;">⚙️ Impostazioni Trasferimento Automatico</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div>
+        <div class="lbl">Trasferimento Automatico</div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button onclick="setAutoTransfer(true)"  class="btn ${bc.autoTransfer?'btn-green':'btn-ghost'}" style="font-size:11px;">✅ Attivo</button>
+          <button onclick="setAutoTransfer(false)" class="btn ${!bc.autoTransfer?'btn-admin':'btn-ghost'}" style="font-size:11px;">⏸ Manuale</button>
+        </div>
+      </div>
+      <div>
+        <div class="lbl">Soglia Minima (USDT)</div>
+        <input type="number" id="transfer-threshold" class="inp" value="${bc.threshold}" placeholder="100" style="font-size:12px;margin-top:4px;"/>
+        <div class="note">Trasferisce automaticamente quando le commissioni superano questa soglia</div>
+      </div>
+    </div>
+    <button class="btn btn-admin" onclick="saveTransferSettings()">💾 Salva Impostazioni</button>
+  </div>
+
+  <!-- Manual transfer button -->
+  <div class="warn-box" style="margin-bottom:14px;">
+    ⚠️ <b>Sicurezza:</b> Le API del broker vengono cifrate con <b>AES-256-GCM localmente</b> prima di essere salvate. La password non lascia mai questo dispositivo.<br>
+    Crea le API Key del broker con permessi <b>soli per deposit/transfer</b>. <b style="color:var(--red)">NON abilitare prelievo completo.</b>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn btn-admin" onclick="manualTransfer()" style="font-size:12px;padding:8px 16px;">💸 Trasferimento Manuale Ora</button>
+    <button class="btn btn-ghost" onclick="showTransferHistory()">📜 Storico Trasferimenti</button>
+  </div>
+  <div id="transfer-result" style="margin-top:10px;"></div>`;
+}
+
+function setActiveBroker(id){ ADM.brokerConfig.active=id; renderBroker(); showToast(`✅ Broker attivo: ${id.toUpperCase()}`,'#10b981'); }
+function setAutoTransfer(v){ ADM.brokerConfig.autoTransfer=v; showToast(v?'✅ Trasferimento automatico attivato':'⏸ Trasferimento in modalità manuale',v?'#10b981':'#f59e0b'); renderBroker(); }
+function saveTransferSettings(){ ADM.brokerConfig.threshold=+document.getElementById('transfer-threshold').value||100; showToast('💾 Impostazioni trasferimento salvate','#10b981'); }
+function saveBrokerKey(id){
+  const keyEl=document.getElementById('bk-'+id+'-key');
+  const secEl=document.getElementById('bk-'+id+'-secret');
+  const walEl=document.getElementById('bk-'+id+'-wallet');
+  const doSave=()=>{
+    const key=keyEl?keyEl.value:'';
+    const sec=secEl?secEl.value:'';
+    const wallet=walEl?walEl.value:'';
+    if(id!=='manual'&&(!key||!sec)){showToast('⚠️ Inserisci API Key e Secret','#f59e0b');return;}
+    ADM.brokerConfig.keys[id]=(id==='manual'?'wallet_configured':'key_configured');
+    ADM.brokerConfig.wallets[id]=wallet;
+    if(keyEl) keyEl.value='';
+    if(secEl) secEl.value='';
+    showToast(`🔐 Credenziali ${id.toUpperCase()} cifrate e salvate!`,'#10b981');
+    addAuditEntry('Modifica API Broker','ok','185.220.101.45','🇮🇹','Broker: '+id);
+    renderBroker();
+  };
+  if(ADM.tfaEnabled){ADM.pendingAction=doSave;renderOTPBoxes('verify-otp');document.getElementById('modal-2fa-verify').style.display='flex';}else doSave();
+}
+function manualTransfer(){
+  const pending=ADM.commissions.filter(c=>c.status==='pending');
+  const total=pending.reduce((s,c)=>s+c.amount,0);
+  if(total<=0){showToast('ℹ️ Nessuna commissione da trasferire','#6366f1');return;}
+  pending.forEach(c=>c.status='transferred');
+  document.getElementById('transfer-result').innerHTML=`<div class="info-box">✅ <b>Trasferimento completato:</b> $${f2(total)} USDT inviati al broker <b>${ADM.brokerConfig.active.toUpperCase()}</b><br>TX Hash: 0x${Math.random().toString(16).slice(2,14)}... · ${new Date().toLocaleString('it-IT')}</div>`;
+  addAuditEntry('Trasferimento Fondi','ok','185.220.101.45','🇮🇹','$'+f2(total)+' → '+ADM.brokerConfig.active);
+  showToast(`💸 $${f2(total)} trasferiti a ${ADM.brokerConfig.active.toUpperCase()}`,'#10b981');
+}
+function showTransferHistory(){
+  const transferred=ADM.commissions.filter(c=>c.status==='transferred').slice(0,10);
+  document.getElementById('transfer-result').innerHTML=`
+  <div class="card" style="margin-top:10px;">
+    <div class="card-hdr"><span class="card-title">📜 Ultimi Trasferimenti</span></div>
+    <div style="overflow:auto;max-height:200px;">
+      <table class="dt"><thead><tr><th>Data</th><th>Importo</th><th>Broker</th><th>TX Hash</th><th>Status</th></tr></thead>
+      <tbody>${transferred.map(c=>`<tr><td>${c.date}</td><td style="color:var(--yellow)">$${f2(c.amount)}</td><td>${c.broker}</td><td style="color:var(--muted);font-size:10px">${c.txHash}</td><td><span class="badge bg-ok">Completato</span></td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════
+//  COMMISSIONS
+// ══════════════════════════════════════
+function renderCommissions(){
+  const pending=ADM.commissions.filter(c=>c.status==='pending');
+  const done   =ADM.commissions.filter(c=>c.status==='transferred');
+  document.getElementById('tab-content').innerHTML=`
+  <div class="section-title">📈 Gestione Commissioni</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:14px;">
+    <div class="kpi yellow"><div class="kpi-label">Da Trasferire</div><div class="kpi-value" style="color:var(--yellow)">$${f2(pending.reduce((s,c)=>s+c.amount,0))}</div><div class="kpi-icon">⏳</div></div>
+    <div class="kpi green"><div class="kpi-label">Trasferite</div><div class="kpi-value" style="color:var(--green)">$${f2(done.reduce((s,c)=>s+c.amount,0))}</div><div class="kpi-icon">✅</div></div>
+    <div class="kpi red"><div class="kpi-label">Totale Storico</div><div class="kpi-value" style="color:var(--admin)">$${f2(ADM.commissions.reduce((s,c)=>s+c.amount,0))}</div><div class="kpi-icon">💰</div></div>
+  </div>
+  ${pending.length>0?`<div class="warn-box" style="margin-bottom:12px;">⏳ <b>${pending.length} commissioni</b> in attesa di trasferimento per un totale di <b>$${f2(pending.reduce((s,c)=>s+c.amount,0))}</b> USDT. <button onclick="showTab('broker')" class="btn btn-admin" style="font-size:10px;padding:2px 8px;margin-left:6px;">Vai al Broker →</button></div>`:''}
+  <div class="card"><div style="overflow:auto;max-height:calc(100vh - 400px);">
+    <table class="dt"><thead><tr><th>ID</th><th>Data</th><th>Importo</th><th>Valuta</th><th>Status</th><th>Broker</th><th>TX Hash</th></tr></thead>
+    <tbody>${ADM.commissions.map(c=>`<tr class="fade-in">
+      <td style="color:var(--muted)">${c.id}</td>
+      <td>${c.date}</td>
+      <td style="color:${c.status==='pending'?'var(--yellow)':'var(--green)'};font-weight:700">$${f2(c.amount)}</td>
+      <td>${c.currency}</td>
+      <td><span class="badge ${c.status==='pending'?'bg-warn':'bg-ok'}">${c.status==='pending'?'Pendente':'Trasferito'}</span></td>
+      <td>${c.broker}</td>
+      <td style="color:var(--muted);font-size:10px">${c.txHash}</td>
+    </tr>`).join('')}</tbody></table>
+  </div></div>`;
+}
+
+// ══════════════════════════════════════
+//  EXCHANGES ADMIN VIEW
+// ══════════════════════════════════════
+function renderExchanges()
+  initTradingModePanel();{
+  const exList=['Binance','Coinbase','Kraken','KuCoin','Bybit','OKX','Huobi/HTX','Gate.io','Bitfinex','Gemini','MEXC','Bitget'];
+  const stats=exList.map(ex=>({
+    name:ex,
+    users: Math.floor(Math.random()*15+1),
+    vol:   +(Math.random()*80000+5000).toFixed(2),
+    fees:  +(Math.random()*80+5).toFixed(2),
+    status: Math.random()>0.2?'online':'degraded',
+  }));
+  document.getElementById('tab-content').innerHTML=`
+  <div class="section-title">🔗 Exchange — Panoramica</div>
+  <div class="card"><div style="overflow:auto;">
+    <table class="dt"><thead><tr><th>Exchange</th><th>Utenti Connessi</th><th>Volume</th><th>Fee Generate</th><th>Status API</th></tr></thead>
+    <tbody>${stats.map(e=>`<tr class="fade-in">
+      <td style="font-weight:700;font-family:'Inter',sans-serif;">${e.name}</td>
+      <td>${e.users}</td>
+      <td>$${f2(e.vol)}</td>
+      <td style="color:var(--yellow);font-weight:700">$${f2(e.fees)}</td>
+      <td><span class="badge ${e.status==='online'?'bg-ok':'bg-warn'}">${e.status}</span></td>
+    </tr>`).join('')}</tbody></table>
+  </div></div>`;
+}
+
+// ══════════════════════════════════════
+//  SECURITY ADMIN
+// ══════════════════════════════════════
+function renderSecurity(){
+  document.getElementById('tfa-status-chip').textContent=ADM.tfaEnabled?'ON ✓':'OFF';
+  document.getElementById('tfa-status-chip').style.color=ADM.tfaEnabled?'var(--green)':'var(--red)';
+  document.getElementById('tab-content').innerHTML=`
+  <div class="section-title">🛡 Sicurezza Admin</div>
+
+  <!-- 2FA -->
+  <div class="card" style="padding:16px;margin-bottom:12px;">
+    <div style="font-size:12px;font-weight:700;margin-bottom:10px;">🔐 Autenticazione a Due Fattori (2FA TOTP)</div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg3);border:1px solid var(--b);border-radius:8px;margin-bottom:10px;">
+      <div>
+        <div style="font-size:12px;font-weight:600;">Stato 2FA Admin</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;">Protegge login + azioni sensibili (trasferimenti, API key, sospensioni utenti)</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+        <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:${ADM.tfaEnabled?'rgba(16,185,129,.2)':'rgba(239,68,68,.2)'};color:${ADM.tfaEnabled?'var(--green)':'var(--red)'};">${ADM.tfaEnabled?'● Attivo':'● Disattivato'}</span>
+        <button class="btn btn-admin" onclick="open2FAModal()">${ADM.tfaEnabled?'Gestisci 2FA':'Attiva 2FA'}</button>
+      </div>
+    </div>
+    <div class="info-box">
+      🔒 Con 2FA attivato, ogni accesso admin, ogni trasferimento di commissioni, ogni modifica API broker e ogni azione critica richiederà il codice dall'app Authenticator.
+    </div>
+  </div>
+
+  <!-- Password Admin -->
+  <div class="card" style="padding:16px;margin-bottom:12px;">
+    <div style="font-size:12px;font-weight:700;margin-bottom:10px;">🔑 Cambio Password Admin</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div>
+        <div class="lbl">Password Attuale</div>
+        <div class="inp-wrap"><input type="password" id="pwd-old" class="inp" placeholder="••••••••"/><button class="eye-btn" onclick="toggleVis('pwd-old',this)">👁</button></div>
+      </div>
+      <div>
+        <div class="lbl">Nuova Password</div>
+        <div class="inp-wrap"><input type="password" id="pwd-new" class="inp" placeholder="min 12 caratteri"/><button class="eye-btn" onclick="toggleVis('pwd-new',this)">👁</button></div>
+      </div>
+      <div>
+        <div class="lbl">Conferma Password</div>
+        <div class="inp-wrap"><input type="password" id="pwd-new2" class="inp" placeholder="Ripeti"/><button class="eye-btn" onclick="toggleVis('pwd-new2',this)">👁</button></div>
+      </div>
+    </div>
+    <button class="btn btn-admin" onclick="changeAdminPwd()">🔑 Aggiorna Password</button>
+  </div>
+
+  <!-- Whitelist IP -->
+  <div class="card" style="padding:16px;margin-bottom:12px;">
+    <div style="font-size:12px;font-weight:700;margin-bottom:10px;">🌐 IP Whitelist Admin</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Solo gli IP in questa lista possono accedere al pannello admin.</div>
+    <div id="ip-whitelist" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">
+      ${['185.220.101.45','10.0.0.1'].map(ip=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg3);border:1px solid var(--b);border-radius:6px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;flex:1;">${ip}</span>
+        <span class="badge bg-ok">Autorizzato</span>
+        <button class="btn btn-danger" onclick="removeWhitelistIP('${ip}')" style="font-size:9px;padding:2px 6px;">Rimuovi</button>
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="new-ip" class="inp" placeholder="Nuovo IP (es. 192.168.1.1)" style="flex:1;"/>
+      <button class="btn btn-green" onclick="addWhitelistIP()">+ Aggiungi</button>
+    </div>
+  </div>
+
+  <!-- Session timeout -->
+  <div class="card" style="padding:16px;">
+    <div style="font-size:12px;font-weight:700;margin-bottom:10px;">⏰ Timeout Sessione</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <select id="session-timeout-select" class="inp" style="width:180px;padding:6px 8px;">
+        <option value="30">30 minuti</option>
+        <option value="60" selected>1 ora</option>
+        <option value="120">2 ore</option>
+        <option value="240">4 ore</option>
+      </select>
+      <button class="btn btn-admin" onclick="showToast('✅ Timeout aggiornato','#10b981')">Salva</button>
+    </div>
+  </div>`;
+}
+
+async function changeAdminPwd(){
+  const old_ = document.getElementById('pwd-old').value;
+  const new_ = document.getElementById('pwd-new').value;
+  const new2 = document.getElementById('pwd-new2').value;
+  if (!old_ || !new_ || !new2) { showToast('⚠️ Compila tutti i campi','#f59e0b'); return; }
+  if (new_ !== new2)            { showToast('⚠️ Le password non coincidono','#ef4444'); return; }
+  if (new_.length < 12)         { showToast('⚠️ Minimo 12 caratteri','#f59e0b'); return; }
+  if (!/[A-Z]/.test(new_))      { showToast('⚠️ Inserisci almeno una maiuscola','#f59e0b'); return; }
+  if (!/[0-9]/.test(new_))      { showToast('⚠️ Inserisci almeno un numero','#f59e0b'); return; }
+  const storedHash = localStorage.getItem(ADMIN_HASH_KEY);
+  const oldHash    = await sha256(old_);
+  await new Promise(r => setTimeout(r, 80 + Math.random() * 100));
+  const ok = storedHash ? await timingSafeEqualStr(oldHash, storedHash) : false;
+  if (!ok) { showToast('❌ Password attuale errata','#ef4444'); return; }
+  const newHash = await sha256(new_);
+  localStorage.setItem(ADMIN_HASH_KEY, newHash);
+  showToast('✅ Password aggiornata con successo','#10b981');
+  addAuditEntry('Modifica Password Admin','ok','185.220.101.45','🇮🇹','Password aggiornata');
+}
+function addWhitelistIP(){
+  const ip=document.getElementById('new-ip').value.trim();
+  if(!ip){return;}
+  const el=document.getElementById('ip-whitelist');
+  el.insertAdjacentHTML('beforeend',`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg3);border:1px solid var(--b);border-radius:6px;"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;flex:1;">${ip}</span><span class="badge bg-ok">Autorizzato</span><button class="btn btn-danger" style="font-size:9px;padding:2px 6px;">Rimuovi</button></div>`);
+  document.getElementById('new-ip').value='';
+  showToast('✅ IP aggiunto alla whitelist','#10b981');
+}
+function removeWhitelistIP(ip){showToast('🗑 IP rimosso: '+ip,'#f59e0b');}
+
+// ══════════════════════════════════════
+//  AUDIT LOG
+// ══════════════════════════════════════
+function renderAudit(){
+  document.getElementById('tab-content').innerHTML=`
+  <div class="section-title">📋 Audit Log — Tutti gli eventi</div>
+  <div class="card"><div style="overflow:auto;max-height:calc(100vh - 200px);">
+    <table class="dt"><thead><tr><th>Evento</th><th>Stato</th><th>IP</th><th>Paese</th><th>Data/Ora</th><th>Dettaglio</th></tr></thead>
+    <tbody id="audit-body">${ADM.auditLog.map(e=>`<tr class="fade-in">
+      <td style="font-family:'Inter',sans-serif;">${e.type}</td>
+      <td><span class="badge ${e.status==='ok'?'bg-ok':'bg-err blink'}">${e.status==='ok'?'OK':'⚠ Allerta'}</span></td>
+      <td style="font-size:10px">${e.ip}</td>
+      <td>${e.country}</td>
+      <td style="color:var(--muted)">${e.date}</td>
+      <td style="color:var(--muted);font-size:10px;">${e.detail}</td>
+    </tr>`).join('')}</tbody></table>
+  </div></div>`;
+}
+function addAuditEntry(type,status,ip,country,detail){
+  ADM.auditLog.unshift({type,status,ip,country,detail,date:new Date().toLocaleString('it-IT').replace(',','')});
+  if(ADM.auditLog.length>100) ADM.auditLog.pop();
+}
+
+// ══════════════════════════════════════
+//  SESSIONS
+// ══════════════════════════════════════
+function renderSessions(){
+  document.getElementById('tab-content').innerHTML=`
+  <div class="section-title">📱 Sessioni Admin Attive</div>
+  <div class="card" style="margin-bottom:12px;">
+    <div style="overflow:auto;">
+      <table class="dt"><thead><tr><th>IP</th><th>Browser / OS</th><th>Posizione</th><th>Data</th><th>Stato</th><th>Azione</th></tr></thead>
+      <tbody>${ADM.adminSessions.map(s=>`<tr class="fade-in">
+        <td>${s.ip}</td>
+        <td style="font-family:'Inter',sans-serif;">${s.ua}</td>
+        <td>📍 ${s.loc}</td>
+        <td style="color:var(--muted)">${s.date}</td>
+        <td>${s.current?'<span style="font-size:9px;background:rgba(99,102,241,.15);color:#6366f1;padding:2px 6px;border-radius:20px;font-weight:700;">Questa sess.</span>':'<span class="badge bg-ok">Attiva</span>'}</td>
+        <td>${s.current?'—':`<button class="btn btn-danger" onclick="killSession('${s.id}')" style="font-size:9px;padding:2px 7px;">Disconnetti</button>`}</td>
+      </tr>`).join('')}</tbody></table>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-danger" onclick="killAllSessions()">⚡ Disconnetti tutti (tranne questa)</button>
+  </div>`;
+}
+function killSession(id){ ADM.adminSessions=ADM.adminSessions.filter(s=>s.id!==id); renderSessions(); showToast('✅ Sessione terminata','#10b981'); addAuditEntry('Logout Remoto','ok','185.220.101.45','🇮🇹','Sessione '+id+' terminata'); }
+function killAllSessions(){ ADM.adminSessions=ADM.adminSessions.filter(s=>s.current); renderSessions(); showToast('✅ Tutte le altre sessioni terminate','#10b981'); }
+
+// ══════════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════════
+function renderSettings(){
+  document.getElementById('tab-content').innerHTML=`
+  <div class="section-title">⚙️ Impostazioni Piattaforma</div>
+  <!-- ══ MODALITÀ TRADING ══ -->
+    <div class="card" style="padding:16px;margin-bottom:10px;border:2px solid rgba(99,102,241,.3);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:800;letter-spacing:.5px;">⚡ Modalità Trading</div>
+        <div id="trading-mode-badge" style="font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;background:#f59e0b20;color:#f59e0b;border:1px solid #f59e0b;">● DEMO</div>
+      </div>
+
+      <!-- Toggle DEMO / REALE -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <button id="btn-mode-demo" onclick="setTradingMode('demo')"
+          style="padding:12px;border-radius:10px;border:2px solid #f59e0b;background:#f59e0b20;color:#f59e0b;font-weight:700;font-size:12px;cursor:pointer;transition:.2s;">
+          🎮 DEMO<br><span style="font-size:9px;font-weight:400;opacity:.8;">Saldo simulato</span>
+        </button>
+        <button id="btn-mode-real" onclick="setTradingMode('real')"
+          style="padding:12px;border-radius:10px;border:2px solid #374151;background:transparent;color:#6b7280;font-weight:700;font-size:12px;cursor:pointer;transition:.2s;">
+          💸 REALE<br><span style="font-size:9px;font-weight:400;opacity:.8;">API Key attiva</span>
+        </button>
+      </div>
+
+      <!-- Stato modalità -->
+      <div id="trading-mode-info" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px;font-size:11px;color:#d97706;margin-bottom:12px;">
+        🎮 Modalità DEMO attiva — i trade sono simulati, nessun fondo reale viene movimentato.
+      </div>
+
+      <!-- Proxy URL (solo per modalità reale) -->
+      <div id="proxy-config" style="display:none;">
+        <div class="lbl" style="margin-bottom:6px;">🌐 URL Proxy Backend</div>
+        <input type="text" id="proxy-url-input" class="inp" placeholder="https://tuoprogetto.vercel.app/api/exchange"
+          style="margin-bottom:6px;" value=""/>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:10px;">
+          Il proxy è necessario per accedere alle API private degli exchange in modo sicuro.
+          <a href="https://vercel.com" target="_blank" style="color:#6366f1;">Crea gratis su Vercel →</a>
+        </div>
+        <button class="btn btn-admin" onclick="saveProxyUrl()" style="margin-bottom:8px;">💾 Salva URL Proxy</button>
+      </div>
+
+      <!-- Exchange configurati -->
+      <div class="lbl" style="margin-bottom:6px;">Exchange con API Key salvata</div>
+      <div id="exchange-api-status" style="font-size:11px;color:var(--muted);">Caricamento...</div>
+
+      <!-- Test connessione -->
+      <div id="real-mode-actions" style="display:none;margin-top:10px;">
+        <button class="btn btn-green" onclick="testExchangeConnection()" style="font-size:11px;width:100%;margin-bottom:6px;">
+          🔌 Testa Connessione Exchange
+        </button>
+        <button class="btn btn-admin" onclick="syncRealBalances()" style="font-size:11px;width:100%;">
+          🔄 Sincronizza Saldi Reali
+        </button>
+      </div>
+    </div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div class="card" style="padding:16px;">
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px;">💰 Commissioni</div>
+      <div style="margin-bottom:10px;">
+        <div class="lbl">Fee Standard (%)</div>
+        <input type="number" id="fee-pct" class="inp" value="0.08" step="0.01" min="0.01" max="1"/>
+        <div class="note">Fee attuale: 0.08% per trade. Binance: 0.10%</div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div class="lbl">Fee VIP (utenti alto volume)</div>
+        <input type="number" id="fee-vip" class="inp" value="0.05" step="0.01" min="0.01"/>
+      </div>
+      <button class="btn btn-admin" onclick="saveFeeSettings()">💾 Salva Fee</button>
+    </div>
+    <div class="card" style="padding:16px;">
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px;">🌐 Piattaforma</div>
+      <div style="margin-bottom:10px;">
+        <div class="lbl">Modalità Manutenzione</div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn btn-ghost" style="font-size:11px;">✅ Attiva</button>
+          <button class="btn btn-green" style="font-size:11px;">Online</button>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div class="lbl">Nuove Registrazioni</div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn btn-green" style="font-size:11px;">✅ Aperte</button>
+          <button class="btn btn-ghost" style="font-size:11px;">Chiuse</button>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div class="lbl">KYC Obbligatorio</div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn btn-admin" style="font-size:11px;">✅ Sì</button>
+          <button class="btn btn-ghost" style="font-size:11px;">No</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="padding:16px;">
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px;">📧 Notifiche Email</div>
+      <div style="margin-bottom:8px;">
+        <div class="lbl">SMTP / Provider</div>
+        <select class="inp" style="padding:6px 8px;font-size:11px;">
+          <option>SendGrid</option><option>Mailgun</option><option>AWS SES</option><option>SMTP Custom</option>
+        </select>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div class="lbl">API Key Email</div>
+        <div class="inp-wrap"><input type="password" id="email-api" class="inp" placeholder="API Key provider email"/><button class="eye-btn" onclick="toggleVis('email-api',this)">👁</button></div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div class="lbl">Email mittente</div>
+        <input type="email" class="inp" placeholder="noreply@cryptotrade.pro"/>
+      </div>
+      <button class="btn btn-admin" onclick="showToast('✅ Email config salvata','#10b981')">💾 Salva</button>
+    </div>
+    <div class="card" style="padding:16px;">
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px;">⚡ Rate Limiting</div>
+      <div style="margin-bottom:8px;">
+        <div class="lbl">Max tentativi login (utente)</div>
+        <input type="number" class="inp" value="5"/>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div class="lbl">Blocco dopo X minuti</div>
+        <input type="number" class="inp" value="30"/>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div class="lbl">Max tentativi login (admin)</div>
+        <input type="number" class="inp" value="3"/>
+      </div>
+      <button class="btn btn-admin" onclick="showToast('✅ Rate limit salvato','#10b981')">💾 Salva</button>
+    </div>
+  </div>`;
+}
+function saveFeeSettings(){ showToast('✅ Fee aggiornate','#10b981'); addAuditEntry('Modifica Commissione','ok','185.220.101.45','🇮🇹','Fee: '+document.getElementById('fee-pct').value+'%'); }
+
+// ══════════════════════════════════════
+//  SYSTEM LOGS
+// ══════════════════════════════════════
+function renderLogs(){
+  const colors={INFO:'var(--cyan)',WARN:'var(--yellow)',ERROR:'var(--red)'};
+  document.getElementById('tab-content').innerHTML=`
+  <div class="section-title">🖥 Log di Sistema</div>
+  <div class="card" style="padding:0;">
+    <div style="background:var(--bg0);padding:12px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8;max-height:calc(100vh - 200px);overflow:auto;">
+      ${ADM.sysLogs.map(l=>`<div class="fade-in"><span style="color:var(--muted);">[${l.time}]</span> <span style="color:${colors[l.level]};font-weight:600;">[${l.level}]</span> <span>${l.msg}</span></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════
+//  2FA TOTP (identica a dashboard, tema admin)
+// ══════════════════════════════════════
+function generateTOTPSecret(){const c='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';let s='';for(let i=0;i<32;i++)s+=c[Math.floor(Math.random()*c.length)];return s;}
+function generateBackupCodes(n=5){const p='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:n},()=>Array.from({length:8},()=>p[Math.floor(Math.random()*p.length)]).join(''));}
+function base32Decode(s){const a='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';s=s.toUpperCase().replace(/=+$/,'');let bits=0,val=0;const out=[];for(const c of s){val=(val<<5)|a.indexOf(c);bits+=5;if(bits>=8){out.push((val>>>(bits-8))&255);bits-=8;}}return new Uint8Array(out);}
+async function computeTOTP(secret,offset=0){
+  const time=Math.floor(Date.now()/1000/30)+offset;
+  const buf=new ArrayBuffer(8);new DataView(buf).setUint32(4,time,false);
+  const key=await crypto.subtle.importKey('raw',base32Decode(secret),{name:'HMAC',hash:'SHA-1'},false,['sign']);
+  const sig=await crypto.subtle.sign('HMAC',key,buf);
+  const arr=new Uint8Array(sig),off2=arr[arr.length-1]&0xf;
+  const code=((arr[off2]&0x7f)<<24|(arr[off2+1]&0xff)<<16|(arr[off2+2]&0xff)<<8|(arr[off2+3]&0xff))%1000000;
+  return String(code).padStart(6,'0');
+}
+async function timingSafeEqual(a,b){
+  if(typeof a!=='string'||typeof b!=='string') return false;
+  const maxLen=Math.max(a.length,b.length);
+  const padA=a.padEnd(maxLen,'0'),padB=b.padEnd(maxLen,'0');
+  const encA=new TextEncoder().encode(padA),encB=new TextEncoder().encode(padB);
+  const kA=await crypto.subtle.importKey('raw',encA,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  const kB=await crypto.subtle.importKey('raw',encB,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  const dummy=new TextEncoder().encode('admin_nonce');
+  const sA=await crypto.subtle.sign('HMAC',kA,dummy),sB=await crypto.subtle.sign('HMAC',kB,dummy);
+  const aA=new Uint8Array(sA),aB=new Uint8Array(sB);
+  let diff=0;for(let i=0;i<aA.length;i++)diff|=(aA[i]^aB[i]);
+  await new Promise(r=>setTimeout(r,80+Math.random()*100));
+  return diff===0&&a.length===b.length;
+}
+
+function open2FAModal(){
+  if(!ADM.tfaSecret) ADM.tfaSecret=generateTOTPSecret();
+  ADM.tfa2Step=1; ADM._backupCodes=generateBackupCodes(5);
+  document.getElementById('modal-2fa').style.display='flex';
+  render2FAStep(1);
+}
+function render2FAStep(step){
+  ADM.tfa2Step=step;
+  ['sd1','sd2','sd3'].forEach((id,i)=>{document.getElementById(id).className='step-dot'+(i+1<step?' done':i+1===step?' active':'');});
+  const c=document.getElementById('tfa-step-content');
+  if(step===1){
+    const oa=`otpauth://totp/CryptoTradeAdmin:admin@cryptotrade.pro?secret=${ADM.tfaSecret}&issuer=CryptoTradeAdmin&algorithm=SHA1&digits=6&period=30`;
+    const qr=`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(oa)}&bgcolor=ffffff&color=000000`;
+    c.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:6px;">Scansiona con Google Authenticator o Authy</div>
+    <div class="qr-box"><img src="${qr}" alt="QR 2FA Admin" onerror="this.parentElement.innerHTML='QR non disponibile'"/></div>
+    <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--admin2);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:8px;letter-spacing:.1em;cursor:pointer;user-select:all;margin:8px 0;" onclick="navigator.clipboard.writeText('${ADM.tfaSecret}');showToast('✅ Chiave copiata','#10b981')">${ADM.tfaSecret.match(/.{1,4}/g).join(' ')}</div>
+    <button class="btn-lg btn-admin" onclick="render2FAStep(2)" style="margin-top:10px;">Avanti →</button>`;
+  }else if(step===2){
+    c.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:6px;">🔑 Codici di Backup Admin</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;">Salva questi codici in un luogo sicuro offline. Ogni codice è monouso.</div>
+    <div class="backup-codes">${ADM._backupCodes.map(bc=>`<div class="backup-code">${bc}</div>`).join('')}</div>
+    <button onclick="navigator.clipboard.writeText(${JSON.stringify(ADM._backupCodes.join('\n'))});showToast('✅ Codici copiati','#10b981')" class="btn btn-ghost" style="width:100%;margin-bottom:8px;font-size:11px;">📋 Copia tutti</button>
+    <button class="btn-lg btn-admin" onclick="render2FAStep(3)">Avanti →</button>`;
+  }else{
+    c.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:6px;">✅ Verifica Codice</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Inserisci il codice dall'Authenticator per confermare l'attivazione.</div>
+    <div class="otp-wrap" id="setup-otp"></div>
+    <div id="setup-err" style="color:var(--red);font-size:11px;text-align:center;min-height:14px;margin-top:4px;"></div>
+    <button class="btn-lg btn-admin" onclick="verifyAndActivate2FA()" style="margin-top:10px;">Verifica e Attiva</button>`;
+    renderOTPBoxes('setup-otp');
+  }
+}
+async function verifyAndActivate2FA(){
+  const code=getOTPValue('setup-otp');
+  if(code.length!==6){document.getElementById('setup-err').textContent='Inserisci 6 cifre.';return;}
+  const exp=await computeTOTP(ADM.tfaSecret),prev=await computeTOTP(ADM.tfaSecret,-1),next=await computeTOTP(ADM.tfaSecret,1);
+  const ok=await timingSafeEqual(code,exp)||await timingSafeEqual(code,prev)||await timingSafeEqual(code,next);
+  if(!ok){document.getElementById('setup-err').textContent='Codice errato. Riprova.';clearOTP('setup-otp');return;}
+  ADM.tfaEnabled=true;
+  closeModal('modal-2fa');
+  showToast('🔐 2FA Admin attivato!','#10b981');
+  addAuditEntry('2FA Attivato','ok','185.220.101.45','🇮🇹','TOTP abilitato per admin');
+  renderSecurity();
+}
+async function verify2FAAndProceed(){
+  const code=getOTPValue('verify-otp');
+  if(code.length!==6){document.getElementById('verify-err').textContent='Inserisci 6 cifre.';return;}
+  const exp=await computeTOTP(ADM.tfaSecret),prev=await computeTOTP(ADM.tfaSecret,-1),next=await computeTOTP(ADM.tfaSecret,1);
+  const ok=await timingSafeEqual(code,exp)||await timingSafeEqual(code,prev)||await timingSafeEqual(code,next);
+  if(!ok){document.getElementById('verify-err').textContent='Codice errato.';clearOTP('verify-otp');return;}
+  closeModal('modal-2fa-verify');
+  if(ADM.pendingAction){ADM.pendingAction();ADM.pendingAction=null;}
+  addAuditEntry('Verifica 2FA','ok','185.220.101.45','🇮🇹','Azione sbloccata con 2FA');
+}
+
+// OTP helpers
+function renderOTPBoxes(cid){const c=document.getElementById(cid);if(!c)return;c.innerHTML=Array.from({length:6},(_,i)=>`<input type="text" class="otp-box" maxlength="1" id="${cid}_${i}" inputmode="numeric" pattern="[0-9]" oninput="otpIn(this,${i},'${cid}')" onkeydown="otpKD(event,${i},'${cid}')"/>`).join('');document.getElementById(cid+'_0')?.focus();}
+function otpIn(el,i,cid){el.value=el.value.replace(/\D/g,'').slice(-1);if(el.value&&i<5)document.getElementById(cid+'_'+(i+1)).focus();}
+function otpKD(e,i,cid){if(e.key==='Backspace'&&!document.getElementById(cid+'_'+i).value&&i>0)document.getElementById(cid+'_'+(i-1)).focus();}
+function getOTPValue(cid){return Array.from({length:6},(_,i)=>document.getElementById(cid+'_'+i)?.value||'').join('');}
+function clearOTP(cid){Array.from({length:6},(_,i)=>{const el=document.getElementById(cid+'_'+i);if(el)el.value='';});document.getElementById(cid+'_0')?.focus();}
+
+// ══════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════
+function toggleVis(id,btn){const el=document.getElementById(id);if(!el)return;const h=el.type==='password';el.type=h?'text':'password';btn.textContent=h?'🙈':'👁';}
+function closeModal(id){document.getElementById(id).style.display='none';}
+function showToast(msg,color='#ef4444'){
+  const t=document.createElement('div');t.textContent=msg;
+  Object.assign(t.style,{position:'fixed',bottom:'20px',right:'20px',zIndex:'9999',background:'#1a1015',border:`1px solid ${color}`,color:'#fff',padding:'10px 14px',borderRadius:'8px',fontSize:'11px',lineHeight:'1.7',maxWidth:'280px',boxShadow:'0 8px 24px rgba(0,0,0,.5)',animation:'fadeIn .25s ease',whiteSpace:'pre-line'});
+  document.body.appendChild(t);setTimeout(()=>t.remove(),4000);
+}
+function confirmAction(title,body,onOk){
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-body').textContent=body;
+  document.getElementById('confirm-ok-btn').onclick=()=>{closeModal('modal-confirm');onOk();};
+  document.getElementById('modal-confirm').style.display='flex';
+}
+
+  // Mostra il pulsante reset solo se aperto da file locale
+  (function() {
+    if (window.location.protocol === 'file:') {
+      const el = document.getElementById('local-reset-zone');
+      if (el) el.style.display = 'block';
+    }
+  })();
+
+// ══════════════════════════════════════════════════════════
+// MODALITÀ TRADING (DEMO / REALE)
+// ══════════════════════════════════════════════════════════
+const TRADING_MODE_KEY = 'ct_trading_mode';
+const PROXY_URL_KEY    = 'ct_proxy_url';
+
+function initTradingModePanel() {
+  const mode = localStorage.getItem(TRADING_MODE_KEY) || 'demo';
+  applyTradingModeUI(mode);
+  renderExchangeApiStatus();
+}
+
+function setTradingMode(mode) {
+  if (mode === 'real') {
+    const proxyUrl = localStorage.getItem(PROXY_URL_KEY) || '';
+    if (!proxyUrl) {
+      showToast('⚠️ Prima configura l\'URL del proxy backend!', '#f59e0b');
+      document.getElementById('proxy-config').style.display = 'block';
+      applyTradingModeUI('demo');
+      return;
+    }
+    if (!confirm('⚠️ Stai attivando la modalità REALE.\n\nI trade eseguiti useranno fondi reali tramite le API Key degli exchange.\n\nSei sicuro?')) return;
+  }
+  localStorage.setItem(TRADING_MODE_KEY, mode);
+  // Propaga ai tab aperti (dashboard)
+  try { localStorage.setItem('ct_mode_changed', Date.now().toString()); } catch(e){}
+  applyTradingModeUI(mode);
+  showToast(mode === 'real' ? '💸 Modalità REALE attivata! Attenzione: fondi reali.' : '🎮 Modalità DEMO attivata — trading simulato.', mode === 'real' ? '#ef4444' : '#f59e0b');
+  addAuditEntry('Cambio Modalità Trading', mode === 'real' ? 'warning' : 'ok', 'locale', mode === 'real' ? '💸' : '🎮', `Modalità cambiata in: ${mode.toUpperCase()}`);
+}
+
+function applyTradingModeUI(mode) {
+  const badge   = document.getElementById('trading-mode-badge');
+  const info    = document.getElementById('trading-mode-info');
+  const btnDemo = document.getElementById('btn-mode-demo');
+  const btnReal = document.getElementById('btn-mode-real');
+  const proxy   = document.getElementById('proxy-config');
+  const actions = document.getElementById('real-mode-actions');
+
+  if (mode === 'real') {
+    badge.textContent = '● REALE';
+    badge.style.background = '#ef444420'; badge.style.color = '#ef4444'; badge.style.border = '1px solid #ef4444';
+    info.style.background = 'rgba(239,68,68,.08)'; info.style.borderColor = 'rgba(239,68,68,.2)'; info.style.color = '#ef4444';
+    info.textContent = '💸 Modalità REALE attiva — i trade utilizzano fondi reali via API Key. Massima attenzione!';
+    btnReal.style.borderColor = '#ef4444'; btnReal.style.background = '#ef444420'; btnReal.style.color = '#ef4444';
+    btnDemo.style.borderColor = '#374151'; btnDemo.style.background = 'transparent'; btnDemo.style.color = '#6b7280';
+    proxy.style.display = 'block';
+    actions.style.display = 'block';
+    const url = localStorage.getItem(PROXY_URL_KEY) || '';
+    document.getElementById('proxy-url-input').value = url;
+  } else {
+    badge.textContent = '● DEMO';
+    badge.style.background = '#f59e0b20'; badge.style.color = '#f59e0b'; badge.style.border = '1px solid #f59e0b';
+    info.style.background = 'rgba(245,158,11,.08)'; info.style.borderColor = 'rgba(245,158,11,.2)'; info.style.color = '#d97706';
+    info.textContent = '🎮 Modalità DEMO attiva — i trade sono simulati, nessun fondo reale viene movimentato.';
+    btnDemo.style.borderColor = '#f59e0b'; btnDemo.style.background = '#f59e0b20'; btnDemo.style.color = '#f59e0b';
+    btnReal.style.borderColor = '#374151'; btnReal.style.background = 'transparent'; btnReal.style.color = '#6b7280';
+    proxy.style.display = 'none';
+    actions.style.display = 'none';
+  }
+}
+
+function saveProxyUrl() {
+  const url = document.getElementById('proxy-url-input').value.trim();
+  if (!url || !url.startsWith('http')) { showToast('⚠️ URL non valido', '#f59e0b'); return; }
+  localStorage.setItem(PROXY_URL_KEY, url);
+  showToast('✅ URL Proxy salvato!', '#10b981');
+}
+
+function renderExchangeApiStatus() {
+  const el = document.getElementById('exchange-api-status');
+  if (!el) return;
+  const exchanges = ['binance','coinbase','kraken','kucoin','bybit','okx','huobi','gateio','bitfinex','gemini','mexc','bitget'];
+  const withKeys = exchanges.filter(id => localStorage.getItem('apikey_'+id));
+  if (!withKeys.length) {
+    el.innerHTML = '<span style="color:#ef4444;">⚠️ Nessuna API Key configurata nella dashboard.</span>';
+  } else {
+    el.innerHTML = withKeys.map(id => `<span style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:5px;padding:2px 8px;font-size:10px;color:#10b981;margin:2px;display:inline-block;">✅ ${id.charAt(0).toUpperCase()+id.slice(1)}</span>`).join('');
+  }
+}
+
+async function testExchangeConnection() {
+  const proxyUrl = localStorage.getItem(PROXY_URL_KEY) || '';
+  if (!proxyUrl) { showToast('⚠️ Prima configura il Proxy URL', '#f59e0b'); return; }
+  showToast('🔌 Test connessione in corso...', '#6366f1');
+  try {
+    const res = await fetch(proxyUrl + '?action=ping', { method: 'GET' });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('✅ Proxy raggiungibile! Connessione OK.', '#10b981');
+    } else {
+      showToast('⚠️ Proxy risponde ma con errore: ' + (data.error||'sconosciuto'), '#f59e0b');
+    }
+  } catch(e) {
+    showToast('❌ Proxy non raggiungibile: ' + e.message, '#ef4444');
+  }
+}
+
+async function syncRealBalances() {
+  const proxyUrl = localStorage.getItem(PROXY_URL_KEY) || '';
+  if (!proxyUrl) { showToast('⚠️ Configura il Proxy URL prima', '#f59e0b'); return; }
+  const exchanges = ['binance','coinbase','kraken','kucoin','bybit','okx'];
+  const withKeys  = exchanges.filter(id => localStorage.getItem('apikey_'+id));
+  if (!withKeys.length) { showToast('⚠️ Nessuna API Key configurata', '#f59e0b'); return; }
+  showToast('🔄 Sincronizzazione saldi in corso...', '#6366f1');
+  let results = [];
+  for (const exId of withKeys) {
+    try {
+      const encKey = localStorage.getItem('apikey_'+exId);
+      const res = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'getBalance', exchange: exId, encKey })
+      });
+      const data = await res.json();
+      if (data.success) {
+        results.push(`✅ ${exId}: USDT ${data.balance?.USDT || '—'}`);
+        localStorage.setItem('ct_balance_'+exId, JSON.stringify(data.balance));
+      } else {
+        results.push(`⚠️ ${exId}: ${data.error}`);
+      }
+    } catch(e) {
+      results.push(`❌ ${exId}: errore rete`);
+    }
+  }
+  showToast(results.join('\n'), '#10b981');
+}
+
+// ──────────────────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// GESTIONE FEEDBACK BETA — ADMIN
+// ══════════════════════════════════════════════════════════════
+const FB_STORE_KEY = 'ct_feedback_list';
+
+const FB_TYPE_LABEL = {
+  bug:'🐛 Bug', ui:'🎨 Interfaccia', feature:'💡 Suggerimento',
+  trading:'📊 Trading', security:'🔐 Sicurezza', other:'📝 Altro'
+};
+const FB_SEV_LABEL  = {
+  critical:'🚨 Critica', high:'🔴 Alta', medium:'🟡 Media', low:'🟢 Bassa'
+};
+const FB_SEV_COLOR  = {
+  critical:'#ef4444', high:'#f97316', medium:'#f59e0b', low:'#10b981'
+};
+const FB_STATUS_LABEL = {
+  'new':'🆕 Nuovo','in-progress':'🔧 In lavorazione','fixed':'✅ Risolto','wont-fix':'❌ Non risolvibile'
+};
+const FB_STATUS_COLOR = {
+  'new':'#6366f1','in-progress':'#f59e0b','fixed':'#10b981','wont-fix':'#ef4444'
+};
+
+function getFeedbackList() {
+  return JSON.parse(localStorage.getItem(FB_STORE_KEY) || '[]');
+}
+
+function saveFeedbackList(list) {
+  localStorage.setItem(FB_STORE_KEY, JSON.stringify(list));
+}
+
+function renderFeedbackTab() {
+  // Inietta HTML nel tab-content se non ancora presente
+  const tc = document.getElementById('tab-content');
+  if (tc && !document.getElementById('fb-list-container')) {
+    tc.innerHTML = `
+    <div style="padding:4px 0 16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+        <div>
+          <div style="font-size:18px;font-weight:800;color:var(--text);">🐛 Feedback Beta</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Segnalazioni inviate dagli utenti durante la fase di test</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="exportFeedbackCSV()" class="btn btn-admin" style="font-size:11px;padding:6px 12px;">📥 Esporta CSV</button>
+          <button onclick="clearFixedFeedback()" class="btn btn-admin" style="font-size:11px;padding:6px 12px;border-color:#ef4444;color:#ef4444;">🗑 Rimuovi Risolti</button>
+          <button onclick="renderFeedbackTab()" class="btn btn-admin" style="font-size:11px;padding:6px 12px;">🔄 Aggiorna</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <select id="fb-filter-type" onchange="renderFeedbackTab()" style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-size:11px;">
+          <option value="">Tutti i tipi</option>
+          <option value="bug">🐛 Bug</option>
+          <option value="ui">🎨 Interfaccia</option>
+          <option value="feature">💡 Suggerimento</option>
+          <option value="trading">📊 Trading</option>
+          <option value="security">🔐 Sicurezza</option>
+          <option value="other">📝 Altro</option>
+        </select>
+        <select id="fb-filter-sev" onchange="renderFeedbackTab()" style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-size:11px;">
+          <option value="">Tutte le gravità</option>
+          <option value="critical">🚨 Critica</option>
+          <option value="high">🔴 Alta</option>
+          <option value="medium">🟡 Media</option>
+          <option value="low">🟢 Bassa</option>
+        </select>
+        <select id="fb-filter-status" onchange="renderFeedbackTab()" style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-size:11px;">
+          <option value="">Tutti gli stati</option>
+          <option value="new">🆕 Nuovi</option>
+          <option value="in-progress">🔧 In lavorazione</option>
+          <option value="fixed">✅ Risolti</option>
+          <option value="wont-fix">❌ Non risolvibile</option>
+        </select>
+      </div>
+      <div id="fb-stats-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:18px;"></div>
+      <div id="fb-list-container"></div>
+    </div>`;
+  }
+
+  const list = getFeedbackList();
+  const filterType   = document.getElementById('fb-filter-type')?.value   || '';
+  const filterSev    = document.getElementById('fb-filter-sev')?.value    || '';
+  const filterStatus = document.getElementById('fb-filter-status')?.value || '';
+
+  // Filtra
+  const filtered = list.filter(f => {
+    if (filterType   && f.type     !== filterType)   return false;
+    if (filterSev    && f.severity !== filterSev)    return false;
+    if (filterStatus && f.status   !== filterStatus) return false;
+    return true;
+  });
+
+  // Statistiche
+  const stats = {
+    total:      list.length,
+    newCount:   list.filter(f=>f.status==='new').length,
+    critical:   list.filter(f=>f.severity==='critical'||f.severity==='high').length,
+    fixed:      list.filter(f=>f.status==='fixed').length,
+  };
+  const statsEl = document.getElementById('fb-stats-row');
+  if (statsEl) {
+    statsEl.innerHTML = [
+      { icon:'📬', val: stats.total,    label:'Totali',       color:'#6366f1' },
+      { icon:'🆕', val: stats.newCount, label:'Nuovi',        color:'#f59e0b' },
+      { icon:'🚨', val: stats.critical, label:'Alta Priorità',color:'#ef4444' },
+      { icon:'✅', val: stats.fixed,    label:'Risolti',      color:'#10b981' },
+    ].map(s => `
+      <div style="background:var(--bg2);border:1px solid ${s.color}44;border-radius:10px;padding:12px;text-align:center;">
+        <div style="font-size:20px;">${s.icon}</div>
+        <div style="font-size:22px;font-weight:800;color:${s.color};">${s.val}</div>
+        <div style="font-size:10px;color:var(--muted);">${s.label}</div>
+      </div>`).join('');
+  }
+
+  // Aggiorna badge nav
+  const badge = document.getElementById('nb-feedback');
+  if (badge) {
+    badge.textContent = stats.newCount;
+    badge.style.display = stats.newCount > 0 ? '' : 'none';
+  }
+
+  // Lista
+  const container = document.getElementById('fb-list-container');
+  if (!container) return;
+
+  if (!filtered.length) {
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px 20px;">Nessuna segnalazione trovata con i filtri selezionati.</div>';
+    return;
+  }
+
+  // Ordina: critical > high > medium > low, poi per data
+  const sevOrder = {critical:0,high:1,medium:2,low:3};
+  filtered.sort((a,b) => {
+    if (a.status==='fixed' && b.status!=='fixed') return 1;
+    if (b.status==='fixed' && a.status!=='fixed') return -1;
+    if ((sevOrder[a.severity]||3) !== (sevOrder[b.severity]||3))
+      return (sevOrder[a.severity]||3) - (sevOrder[b.severity]||3);
+    return b.timestamp - a.timestamp;
+  });
+
+  container.innerHTML = filtered.map(f => {
+    const sevColor    = FB_SEV_COLOR[f.severity]    || '#9ca3af';
+    const statusColor = FB_STATUS_COLOR[f.status]   || '#6b7280';
+    return `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid ${sevColor};
+                border-radius:10px;padding:14px 16px;margin-bottom:10px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+            <span style="background:${sevColor}22;border:1px solid ${sevColor}55;border-radius:4px;
+                         padding:1px 7px;font-size:10px;font-weight:700;color:${sevColor};">
+              ${FB_SEV_LABEL[f.severity]||f.severity}
+            </span>
+            <span style="background:#6366f122;border:1px solid #6366f155;border-radius:4px;
+                         padding:1px 7px;font-size:10px;color:#a78bfa;">
+              ${FB_TYPE_LABEL[f.type]||f.type}
+            </span>
+            ${f.section ? `<span style="background:#37415155;border-radius:4px;padding:1px 7px;font-size:10px;color:var(--muted);">${f.section}</span>` : ''}
+          </div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">${escapeHtml(f.title)}</div>
+          <div style="font-size:11px;color:var(--muted);white-space:pre-wrap;line-height:1.5;">${escapeHtml(f.desc)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:8px;">👤 ${escapeHtml(f.user)} · 📅 ${f.date} · ID: ${f.id}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">
+          <span style="background:${statusColor}22;border:1px solid ${statusColor}55;border-radius:20px;
+                       padding:3px 10px;font-size:10px;font-weight:700;color:${statusColor};white-space:nowrap;">
+            ${FB_STATUS_LABEL[f.status]||f.status}
+          </span>
+          <select onchange="updateFbStatus('${f.id}',this.value)"
+            style="background:var(--bg1);border:1px solid var(--border);border-radius:6px;
+                   padding:4px 8px;color:var(--text);font-size:10px;cursor:pointer;">
+            <option value="new"         ${f.status==='new'?'selected':''}>🆕 Nuovo</option>
+            <option value="in-progress" ${f.status==='in-progress'?'selected':''}>🔧 In lavorazione</option>
+            <option value="fixed"       ${f.status==='fixed'?'selected':''}>✅ Risolto</option>
+            <option value="wont-fix"    ${f.status==='wont-fix'?'selected':''}>❌ Non risolvibile</option>
+          </select>
+          <button onclick="deleteFeedback('${f.id}')"
+            style="background:transparent;border:1px solid #ef444444;border-radius:6px;
+                   padding:3px 8px;color:#ef4444;font-size:10px;cursor:pointer;">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateFbStatus(id, newStatus) {
+  const list = getFeedbackList();
+  const idx  = list.findIndex(f => f.id === id);
+  if (idx >= 0) {
+    list[idx].status = newStatus;
+    saveFeedbackList(list);
+    renderFeedbackTab();
+    showToast(`✅ Stato aggiornato: ${FB_STATUS_LABEL[newStatus]}`, '#10b981');
+  }
+}
+
+function deleteFeedback(id) {
+  if (!confirm('Eliminare questa segnalazione?')) return;
+  const list = getFeedbackList().filter(f => f.id !== id);
+  saveFeedbackList(list);
+  renderFeedbackTab();
+  showToast('🗑 Segnalazione eliminata', '#f59e0b');
+}
+
+function clearFixedFeedback() {
+  if (!confirm('Rimuovere tutte le segnalazioni marcate come Risolte o Non risolvibili?')) return;
+  const list = getFeedbackList().filter(f => f.status !== 'fixed' && f.status !== 'wont-fix');
+  saveFeedbackList(list);
+  renderFeedbackTab();
+  showToast('🗑 Segnalazioni risolte rimosse', '#10b981');
+}
+
+function exportFeedbackCSV() {
+  const list = getFeedbackList();
+  if (!list.length) { showToast('⚠️ Nessun feedback da esportare', '#f59e0b'); return; }
+  const headers = ['ID','Data','Tipo','Gravità','Stato','Utente','Sezione','Titolo','Descrizione'];
+  const rows = list.map(f => [
+    f.id, f.date, f.type, f.severity, f.status, f.user, f.section||'',
+    '"'+f.title.replace(/"/g,'""')+'"',
+    '"'+f.desc.replace(/"/g,'""')+'"'
+  ].join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'feedback_beta_'+Date.now()+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('📥 CSV esportato!', '#10b981');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Aggiorna badge feedback all'avvio admin
+(function initFeedbackBadge() {
+  const list = getFeedbackList();
+  const newCount = list.filter(f=>f.status==='new').length;
+  const badge = document.getElementById('nb-feedback');
+  if (badge) {
+    badge.textContent = newCount;
+    badge.style.display = newCount > 0 ? '' : 'none';
+    badge.style.background = '#f59e0b';
+  }
+})();
+// ──────────────────────────────────────────────────────────────
+
+function emergencyReset() {
+  localStorage.removeItem('admin_pwd_hash');
+  localStorage.removeItem('admin_username');
+  localStorage.removeItem('admin_rl');
+  loginAttempts = 0;
+  document.getElementById('emergency-reset-bar').style.display = 'none';
+  if (typeof updateRateBar === 'function') updateRateBar();
+  // Mostra pannello setup
+  const loginFields = document.getElementById('login-fields');
+  const setupPanel  = document.getElementById('inline-setup-panel');
+  const hint        = document.getElementById('first-access-hint');
+  if (loginFields) loginFields.style.display = 'none';
+  if (setupPanel)  setupPanel.style.display  = 'block';
+  if (hint) hint.innerHTML = '<span style="color:#f97316;font-weight:700;">⚠️ Imposta le nuove credenziali</span>';
+  if (typeof showToast === 'function') showToast('✅ Credenziali resettate! Imposta le nuove.', '#10b981');
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  ADMIN — NUOVE SEZIONI: DeFi Mgmt, Stocks Cfg, Premium,
+//           KYC, Notifiche Push, Analytics
+// ═══════════════════════════════════════════════════════════
+
+// ── Helpers ────────────────────────────────────────────────
+const adTabs = ['defi_mgmt','stocks_cfg','premium','kyc_mgmt','notif_cfg','analytics'];
+
+// ── Helper colori KYC / Premium ────────────────────────────
+function kycBadge(s){ const m={approved:'bg-ok',pending:'bg-pend',rejected:'bg-warn',none:''}; return `<span class="badge ${m[s]||''}">${s||'—'}</span>`; }
+function premBadge(p){ return p ? '<span class="badge bg-ok">Premium</span>' : '<span class="badge" style="background:rgba(255,255,255,.08);color:#6b7280;">Free</span>'; }
+
+// ══════════════════════════════════════════════════════════════
+//  1. DEFI HUB MANAGEMENT
+// ══════════════════════════════════════════════════════════════
+function renderDefiMgmt(){
+  const wallets = JSON.parse(localStorage.getItem('ctp_wallets')||'[]');
+  const NETWORK_LABELS = {eth:'Ethereum',bsc:'BNB Chain',polygon:'Polygon',arbitrum:'Arbitrum',optimism:'Optimism',avalanche:'Avalanche'};
+  const NETWORK_COLORS = {eth:'#627eea',bsc:'#f3ba2f',polygon:'#8247e5',arbitrum:'#28a0f0',optimism:'#ff0420',avalanche:'#e84142'};
+
+  // Stats globali DeFi simulati
+  const totalWallets = wallets.length;
+  const totalTVL = wallets.length * (Math.random()*5000 + 1000);
+  const activeProtocols = ['Uniswap V3','Aave V3','Curve','Compound','MakerDAO'];
+
+  document.getElementById('tab-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px;">
+      <div class="kpi red"><div class="kpi-label">Wallet Connessi</div><div class="kpi-value" style="color:var(--admin)">${totalWallets}</div><div class="kpi-sub">da tutti gli utenti</div><div class="kpi-icon">🔗</div></div>
+      <div class="kpi green"><div class="kpi-label">TVL Monitorato</div><div class="kpi-value" style="color:var(--green)">$${(totalTVL/1000).toFixed(1)}K</div><div class="kpi-sub">cross-chain</div><div class="kpi-icon">💎</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Protocolli Attivi</div><div class="kpi-value" style="color:var(--yellow)">${activeProtocols.length}</div><div class="kpi-sub">integrati</div><div class="kpi-icon">🌐</div></div>
+      <div class="kpi red"><div class="kpi-label">Alert Health Factor</div><div class="kpi-value" style="color:var(--admin)">3</div><div class="kpi-sub">utenti a rischio</div><div class="kpi-icon">⚠️</div></div>
+    </div>
+
+    <!-- Config RPC Globale -->
+    <div class="card" style="padding:16px;margin-bottom:12px;">
+      <div class="sec-hdr">🔧 Configurazione RPC Globale (Default per tutti gli utenti)</div>
+      <div style="display:flex;flex-direction:column;gap:8px;" id="admin-rpc-list">
+        ${['Ethereum|https://eth.llamarpc.com','BNB Chain|https://bsc-dataseed.binance.org','Polygon|https://polygon-rpc.com','Arbitrum|https://arb1.arbitrum.io/rpc','Optimism|https://mainnet.optimism.io','Avalanche|https://api.avax.network/ext/bc/C/rpc'].map((r,i)=>{
+          const [net,url] = r.split('|');
+          return `<div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-size:11px;color:var(--muted);width:110px;flex-shrink:0;">${net}</span>
+            <input id="admin-rpc-${i}" value="${url}" style="flex:1;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:5px;padding:6px 10px;color:#fff;font-size:11px;font-family:'JetBrains Mono',monospace;outline:none;"/>
+            <button onclick="showToast('✅ RPC ${net} aggiornato','#10b981')" style="padding:4px 10px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:5px;color:var(--accent);font-size:10px;cursor:pointer;">Salva</button>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Wallet Utenti -->
+    <div class="card" style="padding:16px;margin-bottom:12px;">
+      <div class="sec-hdr">👛 Wallet DeFi degli Utenti</div>
+      ${wallets.length === 0 ? '<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px;">Nessun wallet registrato</div>' : `
+        <table class="dt"><thead><tr>
+          <th>Utente</th><th>Nome Wallet</th><th>Indirizzo</th><th>Network</th><th>Saldo Est.</th><th>Azioni</th>
+        </tr></thead><tbody>
+        ${wallets.map((w,i)=>`<tr>
+          <td>user_${i+1}@mail.com</td>
+          <td><strong>${w.name}</strong></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:10px;">${w.address.slice(0,10)}...${w.address.slice(-6)}</td>
+          <td><span style="background:${NETWORK_COLORS[w.network]||'#6366f1'}22;color:${NETWORK_COLORS[w.network]||'#6366f1'};font-size:10px;padding:2px 8px;border-radius:20px;">${NETWORK_LABELS[w.network]||w.network}</span></td>
+          <td style="color:var(--green);font-family:'JetBrains Mono',monospace;">${(Math.random()*5).toFixed(4)} ETH</td>
+          <td><button onclick="showToast('🔍 Analisi on-chain in corso...','#6366f1')" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--b);border-radius:5px;color:var(--muted);cursor:pointer;">Analizza</button></td>
+        </tr>`).join('')}
+        </tbody></table>`}
+    </div>
+
+    <!-- Protocolli DeFi abilitati -->
+    <div class="card" style="padding:16px;">
+      <div class="sec-hdr">⚙️ Protocolli DeFi Abilitati</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">
+        ${[{name:'Uniswap V3',icon:'🦄',network:'ETH',enabled:true},{name:'Aave V3',icon:'👻',network:'ETH/POLY',enabled:true},{name:'Curve Finance',icon:'🔵',network:'ETH',enabled:true},{name:'Compound V3',icon:'🏦',network:'ETH',enabled:false},{name:'MakerDAO',icon:'🔷',network:'ETH',enabled:true},{name:'PancakeSwap V3',icon:'🥞',network:'BSC',enabled:true}].map(p=>`
+          <div style="padding:12px;background:var(--bg3);border:1px solid var(--b);border-radius:8px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">${p.icon}</span>
+              <div><div style="font-size:12px;font-weight:600;">${p.name}</div><div style="font-size:10px;color:var(--muted);">${p.network}</div></div>
+            </div>
+            <label style="cursor:pointer;display:flex;align-items:center;gap:4px;">
+              <input type="checkbox" ${p.enabled?'checked':''} style="accent-color:var(--accent);width:14px;height:14px;" onchange="showToast('${p.name} '+(this.checked?'abilitato':'disabilitato'),'#6366f1')"/>
+            </label>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  2. MERCATI AZIONARI CONFIG
+// ══════════════════════════════════════════════════════════════
+function renderStocksCfg(){
+  const history = JSON.parse(localStorage.getItem('ctp_stocks_history')||'[]');
+  const portfolio = JSON.parse(localStorage.getItem('ctp_stocks_portfolio')||'{}');
+  const balance = parseFloat(localStorage.getItem('ctp_stocks_balance')||'100000');
+
+  const totalTrades = history.length;
+  const totalVolume = history.reduce((s,h)=>s+parseFloat(h.total||0),0);
+  const totalSpread = history.reduce((s,h)=>s+parseFloat(h.spread||0),0);
+
+  document.getElementById('tab-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px;">
+      <div class="kpi red"><div class="kpi-label">Revenue da Spread</div><div class="kpi-value" style="color:var(--admin)">$${totalSpread.toFixed(4)}</div><div class="kpi-sub">0.1% markup applicato</div><div class="kpi-icon">💹</div></div>
+      <div class="kpi green"><div class="kpi-label">Trade Totali</div><div class="kpi-value" style="color:var(--green)">${totalTrades}</div><div class="kpi-sub">paper trading</div><div class="kpi-icon">📊</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Volume Totale</div><div class="kpi-value" style="color:var(--yellow)">$${(totalVolume/1000).toFixed(1)}K</div><div class="kpi-sub">simulato</div><div class="kpi-icon">📈</div></div>
+      <div class="kpi red"><div class="kpi-label">Posizioni Aperte</div><div class="kpi-value" style="color:var(--admin)">${Object.keys(portfolio).length}</div><div class="kpi-sub">utenti attivi</div><div class="kpi-icon">🗂</div></div>
+    </div>
+
+    <!-- Config Spread e Commissioni -->
+    <div class="card" style="padding:16px;margin-bottom:12px;">
+      <div class="sec-hdr">💹 Configurazione Spread & Commissioni</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:600px;">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;">Spread Markup (%)</div>
+          <input id="adm-spread" type="number" step="0.01" value="0.1" min="0" max="5" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:6px;padding:8px;color:#fff;font-size:13px;font-weight:700;" />
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">Applicato silenziosamente su ogni trade</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;">Commissione Fissa per Trade ($)</div>
+          <input id="adm-commission" type="number" step="0.01" value="0.00" min="0" max="50" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:6px;padding:8px;color:#fff;font-size:13px;" />
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">0 = solo spread markup</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;">Saldo Demo Iniziale ($)</div>
+          <input id="adm-demo-bal" type="number" value="100000" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:6px;padding:8px;color:#fff;font-size:13px;" />
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;">Leva Massima (Paper)</div>
+          <select style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:6px;padding:8px;color:#fff;font-size:13px;">
+            <option>1x (No leva)</option><option selected>5x</option><option>10x</option><option>20x</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="showToast('✅ Configurazione spread salvata','#10b981')" style="margin-top:14px;padding:9px 20px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">💾 Salva Configurazione</button>
+    </div>
+
+    <!-- Titoli Disponibili -->
+    <div class="card" style="padding:16px;margin-bottom:12px;">
+      <div class="sec-hdr">📋 Gestione Titoli Disponibili</div>
+      <div style="overflow:auto;">
+        <table class="dt"><thead><tr>
+          <th>Ticker</th><th>Nome</th><th>Exchange</th><th>Abilitato</th><th>Paywall</th><th>Azioni</th>
+        </tr></thead><tbody>
+          ${[['AAPL','Apple Inc.','NASDAQ'],['TSLA','Tesla Inc.','NASDAQ'],['NVDA','NVIDIA Corp.','NASDAQ'],['AMZN','Amazon.com','NASDAQ'],['MSFT','Microsoft Corp.','NASDAQ'],['GOOGL','Alphabet Inc.','NASDAQ'],['META','Meta Platforms','NASDAQ'],['SPY','SPDR S&P 500 ETF','AMEX'],['BRK.B','Berkshire Hathaway','NYSE'],['JPM','JPMorgan Chase','NYSE']].map(([sym,name,exch],i)=>`
+            <tr>
+              <td><strong>${sym}</strong></td>
+              <td>${name}</td>
+              <td><span style="font-size:10px;color:var(--muted);">${exch}</span></td>
+              <td><input type="checkbox" checked style="accent-color:var(--accent);" onchange="showToast('${sym} '+(this.checked?'abilitato':'disabilitato'),'#6366f1')"/></td>
+              <td><input type="checkbox" ${i>4?'checked':''} style="accent-color:#a855f7;" onchange="showToast('${sym} paywall '+(this.checked?'ON':'OFF'),'#a855f7')"/></td>
+              <td><button onclick="showToast('📊 Dati ${sym} aggiornati','#6366f1')" style="font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--b);border-radius:4px;color:var(--muted);cursor:pointer;">Aggiorna</button></td>
+            </tr>
+          `).join('')}
+        </tbody></table>
+      </div>
+    </div>
+
+    <!-- Storico Trade Admin -->
+    <div class="card" style="padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="sec-hdr" style="margin:0;">📜 Storico Ordini Azionari Globale</div>
+        <button onclick="exportStocksCSV()" style="padding:5px 12px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);border-radius:5px;color:var(--green);font-size:10px;cursor:pointer;">📥 Esporta CSV</button>
+      </div>
+      <div style="overflow:auto;max-height:300px;">
+        <table class="dt"><thead><tr><th>Data</th><th>Ticker</th><th>Tipo</th><th>Quantità</th><th>Prezzo</th><th>Spread $</th><th>Totale</th></tr></thead>
+        <tbody>
+          ${history.length ? history.slice(0,30).map(h=>`<tr>
+            <td style="font-size:10px;">${h.time}</td>
+            <td><strong>${h.symbol}</strong></td>
+            <td><span class="badge ${h.side==='BUY'?'bg-buy':'bg-sell'}">${h.side}</span></td>
+            <td style="font-family:'JetBrains Mono',monospace;">${h.qty}</td>
+            <td style="font-family:'JetBrains Mono',monospace;">$${h.price}</td>
+            <td style="font-family:'JetBrains Mono',monospace;color:var(--yellow);">$${h.spread}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-weight:700;">$${h.total}</td>
+          </tr>`).join('') : '<tr><td colspan="7" class="empty">Nessun trade ancora</td></tr>'}
+        </tbody></table>
+      </div>
+    </div>
+  `;
+}
+
+function exportStocksCSV(){
+  const history = JSON.parse(localStorage.getItem('ctp_stocks_history')||'[]');
+  if(!history.length){showToast('⚠️ Nessun dato da esportare','#f59e0b');return;}
+  const rows = [['Data','Ticker','Tipo','Quantità','Prezzo','Spread','Totale']];
+  history.forEach(h=>rows.push([h.time,h.symbol,h.side,h.qty,h.price,h.spread,h.total]));
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'stocks_history_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  showToast('✅ CSV scaricato','#10b981');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  3. GESTIONE PREMIUM / PAYWALL
+// ══════════════════════════════════════════════════════════════
+function renderPremium(){
+  const users = ADM.users || [];
+  const premUsers  = users.filter(u=>u.premium).length;
+  const freeUsers  = users.length - premUsers;
+  const monthlyRev = premUsers * 29.99;
+
+  document.getElementById('tab-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px;">
+      <div class="kpi red"><div class="kpi-label">Utenti Premium</div><div class="kpi-value" style="color:var(--admin)">${premUsers}</div><div class="kpi-sub">abbonati attivi</div><div class="kpi-icon">⭐</div></div>
+      <div class="kpi green"><div class="kpi-label">Revenue Mensile</div><div class="kpi-value" style="color:var(--green)">$${monthlyRev.toFixed(2)}</div><div class="kpi-sub">@$29.99/mese</div><div class="kpi-icon">💰</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Utenti Free</div><div class="kpi-value" style="color:var(--yellow)">${freeUsers}</div><div class="kpi-sub">potenziali upgrade</div><div class="kpi-icon">🔓</div></div>
+      <div class="kpi red"><div class="kpi-label">Conversione</div><div class="kpi-value" style="color:var(--admin)">${users.length?((premUsers/users.length)*100).toFixed(1):0}%</div><div class="kpi-sub">free → premium</div><div class="kpi-icon">📊</div></div>
+    </div>
+
+    <!-- Config Piani -->
+    <div class="card" style="padding:16px;margin-bottom:12px;">
+      <div class="sec-hdr">💳 Configurazione Piani</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;">
+        ${[{name:'Free',price:0,color:'#6b7280',features:['Trading crypto base','Watchlist 20 asset','Paper trading crypto']},{name:'Premium',price:29.99,color:'#a855f7',features:['Tutto il Free +','Mercati azionari','DeFi Hub completo','Notifiche push','Analisi avanzate']},{name:'Pro',price:79.99,color:'#f59e0b',features:['Tutto il Premium +','API Access','Leva 20x','Priorità supporto','Report mensili']}].map(p=>`
+          <div style="padding:14px;background:var(--bg3);border:1px solid ${p.color}44;border-radius:10px;">
+            <div style="font-size:14px;font-weight:800;color:${p.color};margin-bottom:4px;">${p.name}</div>
+            <div style="font-size:20px;font-weight:700;margin-bottom:8px;">${p.price===0?'Gratis':'$'+p.price+'/mo'}</div>
+            ${p.features.map(f=>`<div style="font-size:11px;color:var(--muted);margin-bottom:3px;">✓ ${f}</div>`).join('')}
+            <input type="number" value="${p.price}" step="0.01" style="width:100%;margin-top:10px;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:5px;padding:6px;color:#fff;font-size:12px;" placeholder="Prezzo"/>
+            <button onclick="showToast('✅ Piano ${p.name} aggiornato','${p.color}')" style="width:100%;margin-top:6px;padding:6px;background:${p.color}22;border:1px solid ${p.color}44;border-radius:5px;color:${p.color};font-size:11px;cursor:pointer;">Salva</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- Config Funzionalità a Pagamento -->
+    <div class="card" style="padding:16px;margin-bottom:12px;">
+      <div class="sec-hdr">🔐 Funzionalità con Paywall</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${[{name:'Mercati Azionari (tutti i titoli)',lock:true,plan:'Premium'},
+           {name:'DeFi Hub - Multi-wallet',lock:true,plan:'Premium'},
+           {name:'Notifiche Push Blockchain',lock:false,plan:'Free'},
+           {name:'Grafici DeFi avanzati',lock:true,plan:'Premium'},
+           {name:'API Access (export dati)',lock:true,plan:'Pro'},
+           {name:'Trading reale con Exchange API',lock:true,plan:'Premium'},
+           {name:'Supporto prioritario',lock:true,plan:'Pro'}].map(f=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border:1px solid var(--b);border-radius:7px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span>${f.lock?'🔒':'🔓'}</span>
+              <span style="font-size:12px;">${f.name}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:10px;padding:2px 8px;border-radius:20px;background:${f.plan==='Pro'?'rgba(245,158,11,.15)':f.plan==='Premium'?'rgba(168,85,247,.15)':'rgba(107,114,128,.15)'};color:${f.plan==='Pro'?'#f59e0b':f.plan==='Premium'?'#a855f7':'#6b7280'};">${f.plan}</span>
+              <input type="checkbox" ${f.lock?'checked':''} style="accent-color:#a855f7;width:14px;height:14px;" onchange="showToast('Paywall '+(this.checked?'attivato':'rimosso'),'#a855f7')"/>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- Lista Utenti con stato abbonamento -->
+    <div class="card" style="padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="sec-hdr" style="margin:0;">👥 Utenti & Abbonamenti</div>
+        <button onclick="showToast('📧 Email promo inviata a tutti i Free','#a855f7')" style="padding:5px 12px;background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);border-radius:5px;color:#a855f7;font-size:10px;cursor:pointer;">📧 Email Promo Free</button>
+      </div>
+      <div style="overflow:auto;max-height:280px;">
+        <table class="dt"><thead><tr><th>Email</th><th>Piano</th><th>Scadenza</th><th>Revenue</th><th>Azioni</th></tr></thead>
+        <tbody>
+          ${users.map((u,i)=>{
+            const isPrem = u.premium||i%3===0;
+            const exp = isPrem ? new Date(Date.now()+30*86400000).toLocaleDateString('it-IT') : '—';
+            return `<tr>
+              <td>${u.email||'user'+i+'@mail.com'}</td>
+              <td>${premBadge(isPrem)}</td>
+              <td style="font-size:11px;color:var(--muted);">${exp}</td>
+              <td style="font-family:'JetBrains Mono',monospace;color:var(--green);">${isPrem?'$'+((i+1)*29.99).toFixed(2):'$0.00'}</td>
+              <td style="display:flex;gap:4px;">
+                <button onclick="showToast('⭐ ${u.email||'user'+i} upgradato a Premium','#a855f7')" style="font-size:10px;padding:2px 7px;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);border-radius:4px;color:#a855f7;cursor:pointer;">${isPrem?'Revoca':'Upgrade'}</button>
+                <button onclick="showToast('📧 Email inviata','#6366f1')" style="font-size:10px;padding:2px 7px;background:transparent;border:1px solid var(--b);border-radius:4px;color:var(--muted);cursor:pointer;">Email</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody></table>
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  4. KYC UTENTI
+// ══════════════════════════════════════════════════════════════
+function renderKycMgmt(){
+  const users = ADM.users || [];
+  const kycStatuses = ['pending','approved','rejected','none'];
+  const kycData = users.map((u,i)=>({
+    ...u,
+    kyc: kycStatuses[i % 4],
+    doc: ['Passaporto','Carta dIdentita','Patente'][i%3],
+    submitted: new Date(Date.now()-i*86400000*3).toLocaleDateString('it-IT'),
+    country: ['🇮🇹 Italia','🇩🇪 Germania','🇫🇷 Francia','🇺🇸 USA','🇬🇧 UK'][i%5],
+  }));
+  const pending  = kycData.filter(u=>u.kyc==='pending').length;
+  const approved = kycData.filter(u=>u.kyc==='approved').length;
+  const rejected = kycData.filter(u=>u.kyc==='rejected').length;
+
+  document.getElementById('tab-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px;">
+      <div class="kpi yellow"><div class="kpi-label">In Attesa</div><div class="kpi-value" style="color:var(--yellow)">${pending}</div><div class="kpi-sub">da verificare</div><div class="kpi-icon">⏳</div></div>
+      <div class="kpi green"><div class="kpi-label">Approvati</div><div class="kpi-value" style="color:var(--green)">${approved}</div><div class="kpi-sub">verificati</div><div class="kpi-icon">✅</div></div>
+      <div class="kpi red"><div class="kpi-label">Rifiutati</div><div class="kpi-value" style="color:var(--admin)">${rejected}</div><div class="kpi-sub">documenti non validi</div><div class="kpi-icon">❌</div></div>
+      <div class="kpi red"><div class="kpi-label">Tasso Approv.</div><div class="kpi-value" style="color:var(--admin)">${kycData.length?((approved/kycData.length)*100).toFixed(0):0}%</div><div class="kpi-sub">su totale</div><div class="kpi-icon">📊</div></div>
+    </div>
+
+    <!-- Filtro rapido -->
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+      ${['all','pending','approved','rejected'].map(f=>`<button onclick="filterKyc('${f}')" id="kyc-filter-${f}" class="pct-btn ${f==='all'?'active':''}" style="padding:5px 14px;">${{all:'Tutti',pending:'⏳ Pending',approved:'✅ Approvati',rejected:'❌ Rifiutati'}[f]}</button>`).join('')}
+    </div>
+
+    <div class="card" style="padding:16px;">
+      <div style="overflow:auto;max-height:400px;">
+        <table class="dt" id="kyc-table"><thead><tr>
+          <th>Utente</th><th>Documento</th><th>Paese</th><th>Inviato il</th><th>Status</th><th>Azioni</th>
+        </tr></thead>
+        <tbody id="kyc-tbody">
+          ${kycData.map((u,i)=>`<tr data-kyc="${u.kyc}">
+            <td>${u.email||'user'+i+'@mail.com'}</td>
+            <td style="font-size:11px;">${u.doc}</td>
+            <td style="font-size:11px;">${u.country}</td>
+            <td style="font-size:11px;color:var(--muted);">${u.submitted}</td>
+            <td>${kycBadge(u.kyc)}</td>
+            <td style="display:flex;gap:4px;flex-wrap:wrap;">
+              <button onclick="approveKyc(this,'${u.email||'user'+i}')" style="font-size:10px;padding:2px 8px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:4px;color:var(--green);cursor:pointer;">✅ Approva</button>
+              <button onclick="rejectKyc(this,'${u.email||'user'+i}')" style="font-size:10px;padding:2px 8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:4px;color:var(--red);cursor:pointer;">❌ Rifiuta</button>
+              <button onclick="showToast('📄 Documento di '+(this.closest('tr').children[0].textContent)+' aperto','#6366f1')" style="font-size:10px;padding:2px 8px;background:transparent;border:1px solid var(--b);border-radius:4px;color:var(--muted);cursor:pointer;">📄 Doc</button>
+            </td>
+          </tr>`).join('')}
+        </tbody></table>
+      </div>
+    </div>
+  `;
+}
+
+function filterKyc(status){
+  document.querySelectorAll('[id^="kyc-filter-"]').forEach(b=>b.classList.remove('active'));
+  const btn = document.getElementById('kyc-filter-'+status); if(btn) btn.classList.add('active');
+  document.querySelectorAll('#kyc-tbody tr').forEach(r=>{
+    r.style.display = (status==='all'||r.dataset.kyc===status) ? '' : 'none';
+  });
+}
+function approveKyc(btn, email){ const row=btn.closest('tr'); row.dataset.kyc='approved'; row.children[4].innerHTML=kycBadge('approved'); showToast('✅ KYC approvato: '+email,'#10b981'); }
+function rejectKyc(btn, email){ const row=btn.closest('tr'); row.dataset.kyc='rejected'; row.children[4].innerHTML=kycBadge('rejected'); showToast('❌ KYC rifiutato: '+email,'#ef4444'); }
+
+// ══════════════════════════════════════════════════════════════
+//  5. NOTIFICHE PUSH CONFIG
+// ══════════════════════════════════════════════════════════════
+function renderNotifCfg(){
+  const notifications = JSON.parse(localStorage.getItem('ctp_notifications')||'[]');
+  const totalSent = notifications.length;
+  const critical  = notifications.filter(n=>n.status==='CRITICAL').length;
+
+  document.getElementById('tab-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px;">
+      <div class="kpi red"><div class="kpi-label">Notifiche Inviate</div><div class="kpi-value" style="color:var(--admin)">${totalSent}</div><div class="kpi-sub">nelle ultime 24h</div><div class="kpi-icon">🔔</div></div>
+      <div class="kpi red"><div class="kpi-label">Alert Critici</div><div class="kpi-value" style="color:var(--admin)">${critical}</div><div class="kpi-sub">health factor basso</div><div class="kpi-icon">⚠️</div></div>
+      <div class="kpi green"><div class="kpi-label">Delivery Rate</div><div class="kpi-value" style="color:var(--green)">98.2%</div><div class="kpi-sub">notifiche consegnate</div><div class="kpi-icon">✅</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Utenti Opt-in</div><div class="kpi-value" style="color:var(--yellow)">${(ADM.users||[]).length}</div><div class="kpi-sub">notifiche attive</div><div class="kpi-icon">📱</div></div>
+    </div>
+
+    <!-- Config Firebase FCM -->
+    <div class="card" style="padding:16px;margin-bottom:12px;">
+      <div class="sec-hdr">🔥 Firebase Cloud Messaging (FCM)</div>
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--yellow);margin-bottom:12px;">
+        ⚠️ Per abilitare le notifiche push reali configura le credenziali Firebase nel pannello server.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;max-width:500px;">
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px;">FCM Server Key</div>
+          <input type="password" placeholder="AAAAxxxxxxxx:APA91bxxx..." style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:6px;padding:8px 10px;color:#fff;font-size:11px;font-family:'JetBrains Mono',monospace;outline:none;"/></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px;">App Sender ID</div>
+          <input type="text" placeholder="123456789012" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:6px;padding:8px 10px;color:#fff;font-size:11px;font-family:'JetBrains Mono',monospace;outline:none;"/></div>
+        <button onclick="showToast('🔥 FCM configurato correttamente','#f59e0b')" style="padding:8px 18px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:7px;color:#000;font-size:12px;font-weight:700;cursor:pointer;align-self:flex-start;">💾 Salva Config FCM</button>
+      </div>
+    </div>
+
+    <!-- Config Alchemy Notify -->
+    <div class="card" style="padding:16px;margin-bottom:12px;">
+      <div class="sec-hdr">⚗️ Alchemy Notify (Blockchain Events)</div>
+      <div style="display:flex;flex-direction:column;gap:10px;max-width:500px;">
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px;">Alchemy API Key</div>
+          <input type="password" placeholder="alch_xxxxxxxxxxxx" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:6px;padding:8px 10px;color:#fff;font-size:11px;font-family:'JetBrains Mono',monospace;outline:none;"/></div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;">Tipi di eventi monitorati</div>
+          ${[['MINED_TRANSACTION','Transazione confermata'],['DROPPED_TRANSACTION','Transazione droppata'],['ADDRESS_ACTIVITY','Attività indirizzo'],['TOKEN_ACTIVITY','Movimento token ERC-20']].map(([type,label])=>`
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;">
+              <input type="checkbox" checked style="accent-color:var(--accent);width:14px;height:14px;" onchange="showToast('Event ${type} '+(this.checked?'attivato':'disattivato'),'#6366f1')"/>
+              <span>${label}</span><code style="font-size:9px;color:var(--muted);">${type}</code>
+            </label>
+          `).join('')}
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">Health Factor Aave — Soglia Alert</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="number" value="1.2" step="0.1" min="1" max="3" style="width:100px;background:rgba(255,255,255,.04);border:1px solid rgba(239,68,68,.4);border-radius:6px;padding:6px 10px;color:var(--red);font-size:13px;font-weight:700;"/>
+            <span style="font-size:11px;color:var(--muted);">Sotto questo valore → notifica push immediata</span>
+          </div>
+        </div>
+        <button onclick="showToast('⚗️ Alchemy Notify configurato','#6366f1')" style="padding:8px 18px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;align-self:flex-start;">💾 Salva Config Alchemy</button>
+      </div>
+    </div>
+
+    <!-- Invio Notifica Broadcast -->
+    <div class="card" style="padding:16px;margin-bottom:12px;">
+      <div class="sec-hdr">📣 Invia Notifica Broadcast</div>
+      <div style="max-width:500px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:8px;">
+          <select id="notif-target" style="background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:6px;padding:7px 10px;color:#fff;font-size:12px;">
+            <option value="all">Tutti gli utenti</option>
+            <option value="premium">Solo Premium</option>
+            <option value="defi">Con wallet DeFi</option>
+            <option value="inactive">Inattivi 7+ giorni</option>
+          </select>
+          <select id="notif-type" style="background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:6px;padding:7px 10px;color:#fff;font-size:12px;">
+            <option>📢 Info</option><option>⚠️ Warning</option><option>🎉 Promozione</option><option>🔒 Sicurezza</option>
+          </select>
+        </div>
+        <input id="notif-title" type="text" placeholder="Titolo notifica..." style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;outline:none;box-sizing:border-box;"/>
+        <textarea id="notif-body" placeholder="Testo della notifica..." rows="3" style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:6px;padding:8px 10px;color:#fff;font-size:12px;resize:vertical;min-height:70px;outline:none;font-family:inherit;box-sizing:border-box;"></textarea>
+        <button onclick="sendBroadcastNotif()" style="padding:9px 20px;background:linear-gradient(135deg,#6366f1,#a855f7);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;align-self:flex-start;">🚀 Invia Notifica</button>
+      </div>
+    </div>
+
+    <!-- Log Notifiche -->
+    <div class="card" style="padding:16px;">
+      <div class="sec-hdr">📋 Log Notifiche Recenti</div>
+      <div style="overflow:auto;max-height:250px;">
+        <table class="dt"><thead><tr><th>Orario</th><th>Tipo</th><th>Titolo</th><th>Status</th></tr></thead>
+        <tbody>
+          ${notifications.length ? notifications.slice(0,15).map(n=>`<tr>
+            <td style="font-size:10px;">${n.time}</td>
+            <td><span class="badge" style="background:${n.color}22;color:${n.color};">${n.status}</span></td>
+            <td style="font-size:11px;">${n.title}</td>
+            <td><span class="badge bg-ok">Inviata</span></td>
+          </tr>`).join('') : '<tr><td colspan="4" class="empty">Nessuna notifica ancora inviata</td></tr>'}
+        </tbody></table>
+      </div>
+    </div>
+  `;
+}
+
+function sendBroadcastNotif(){
+  const title = document.getElementById('notif-title')?.value?.trim();
+  const body  = document.getElementById('notif-body')?.value?.trim();
+  const target = document.getElementById('notif-target')?.value;
+  if(!title||!body){showToast('⚠️ Inserisci titolo e testo','#f59e0b');return;}
+  showToast('🚀 Notifica broadcast inviata a: '+target,'#6366f1');
+  document.getElementById('notif-title').value='';
+  document.getElementById('notif-body').value='';
+}
+
+// ══════════════════════════════════════════════════════════════
+//  6. ANALYTICS AVANZATA
+// ══════════════════════════════════════════════════════════════
+function renderAnalytics(){
+  const users = ADM.users || [];
+  const revenue = ADM.revenue || [];
+  const totalVol = revenue.reduce((s,r)=>s+r.orderUSD,0);
+  const totalFees = revenue.reduce((s,r)=>s+r.fee,0);
+  const avgFee = totalVol > 0 ? (totalFees/totalVol*100) : 0;
+
+  // Dati KPI per giorno (ultimi 7 giorni simulati)
+  const days = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+  const dailyVol  = days.map(()=>Math.random()*50000+10000);
+  const dailyFees = dailyVol.map(v=>v*0.001);
+  const maxVol = Math.max(...dailyVol);
+
+  document.getElementById('tab-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px;">
+      <div class="kpi red"><div class="kpi-label">Volume 7gg</div><div class="kpi-value" style="color:var(--admin)">$${(totalVol/1000).toFixed(0)}K</div><div class="kpi-sub">tutti gli asset</div><div class="kpi-icon">📊</div></div>
+      <div class="kpi green"><div class="kpi-label">Revenue 7gg</div><div class="kpi-value" style="color:var(--green)">$${totalFees.toFixed(2)}</div><div class="kpi-sub">commissioni+spread</div><div class="kpi-icon">💰</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Utenti Attivi</div><div class="kpi-value" style="color:var(--yellow)">${Math.floor(users.length*0.7)}</div><div class="kpi-sub">ultimi 7 giorni</div><div class="kpi-icon">👥</div></div>
+      <div class="kpi red"><div class="kpi-label">Trade/Utente</div><div class="kpi-value" style="color:var(--admin)">${users.length?((revenue.length/users.length)).toFixed(1):0}</div><div class="kpi-sub">media settimanale</div><div class="kpi-icon">🔄</div></div>
+    </div>
+
+    <!-- Grafico Volume a barre -->
+    <div class="card" style="padding:16px;margin-bottom:12px;">
+      <div class="sec-hdr">📊 Volume Giornaliero (ultimi 7gg)</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:160px;padding:0 8px;">
+        ${dailyVol.map((v,i)=>`
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="font-size:9px;color:var(--muted);">$${(v/1000).toFixed(0)}K</div>
+            <div style="width:100%;background:linear-gradient(180deg,#6366f1,#a855f7);border-radius:4px 4px 0 0;height:${Math.round((v/maxVol)*120)}px;min-height:4px;transition:.3s;cursor:pointer;" title="${days[i]}: $${v.toFixed(0)}"></div>
+            <div style="font-size:10px;color:var(--muted);">${days[i]}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- Top Asset per Volume -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="card" style="padding:16px;">
+        <div class="sec-hdr">🏆 Top Asset per Volume</div>
+        ${[['BTC/USDT','#f7931a',42],['ETH/USDT','#627eea',28],['SOL/USDT','#9945ff',12],['BNB/USDT','#f3ba2f',8],['AAPL','#555',6],['TSLA','#cc0000',4]].map(([sym,col,pct])=>`
+          <div style="margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+              <span style="font-weight:600;">${sym}</span><span style="color:var(--muted);">${pct}%</span>
+            </div>
+            <div style="height:5px;background:rgba(255,255,255,.06);border-radius:3px;">
+              <div style="height:100%;width:${pct}%;background:${col};border-radius:3px;transition:.5s;"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="card" style="padding:16px;">
+        <div class="sec-hdr">📱 Dispositivi Utenti</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${[['📱 Mobile iOS','38%','#627eea'],['🤖 Mobile Android','31%','#a855f7'],['💻 Desktop Chrome','19%','#10b981'],['🖥 Desktop Firefox','8%','#f59e0b'],['🌐 Altro','4%','#6b7280']].map(([label,pct,col])=>`
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+                <span>${label}</span><span style="color:${col};font-weight:600;">${pct}</span>
+              </div>
+              <div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px;">
+                <div style="height:100%;width:${pct};background:${col};border-radius:2px;"></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Metriche retention e funnel -->
+    <div class="card" style="padding:16px;">
+      <div class="sec-hdr">🔄 Funnel Conversione & Retention</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">
+        ${[
+          {label:'Registrazioni', val:users.length, sub:'totali', icon:'📝', color:'#6366f1'},
+          {label:'Attivi 7gg', val:Math.floor(users.length*0.72), sub:'72% retention', icon:'✅', color:'#10b981'},
+          {label:'1° Trade', val:Math.floor(users.length*0.58), sub:'58% attivazione', icon:'📊', color:'#a855f7'},
+          {label:'Premium', val:Math.floor(users.length*0.18), sub:'18% conversione', icon:'⭐', color:'#f59e0b'},
+          {label:'Avg Session', val:'8m 32s', sub:'per visita', icon:'⏱', color:'#06b6d4'},
+          {label:'Bounce Rate', val:'24%', sub:'accettabile', icon:'↩', color:'#ef4444'},
+        ].map(m=>`
+          <div style="padding:12px;background:var(--bg3);border:1px solid var(--b);border-radius:8px;text-align:center;">
+            <div style="font-size:20px;margin-bottom:4px;">${m.icon}</div>
+            <div style="font-size:18px;font-weight:700;color:${m.color};">${m.val}</div>
+            <div style="font-size:10px;font-weight:600;color:var(--txt);">${m.label}</div>
+            <div style="font-size:9px;color:var(--muted);">${m.sub}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+      <button onclick="showToast('📊 Report PDF generato','#6366f1')" style="padding:8px 16px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:7px;color:var(--accent);font-size:12px;cursor:pointer;">📄 Export PDF</button>
+      <button onclick="showToast('📈 Report CSV scaricato','#10b981')" style="padding:8px 16px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);border-radius:7px;color:var(--green);font-size:12px;cursor:pointer;">📥 Export CSV</button>
+      <button onclick="showToast('📧 Report inviato via email','#a855f7')" style="padding:8px 16px;background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);border-radius:7px;color:#a855f7;font-size:12px;cursor:pointer;">📧 Invia per Email</button>
+    </div>
+  `;
+}
+</script>
+
+</body>
+</html>

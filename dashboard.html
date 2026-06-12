@@ -240,11 +240,304 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--txt);}
 </style>
 </head>
 <body>
+<!-- ════════════════════════════════════════════════════════
+     ACCESS GATE — Emergency Lock Screen
+     Protegge tutta la proprietà intellettuale della piattaforma
+     da accessi non autorizzati prima del rendering dei dati.
+     ════════════════════════════════════════════════════════ -->
+<div id="access-gate">
+  <div class="ag-bg-grid"></div>
+  <div class="ag-orb ag-orb-1"></div>
+  <div class="ag-orb ag-orb-2"></div>
+  <div class="ag-card">
+    <div class="ag-logo-ring">🔐</div>
+    <div class="ag-title">CryptoTrade Pro</div>
+    <div class="ag-subtitle">Accesso riservato · Proprietà intellettuale protetta<br>Inserisci la tua Access Key per continuare</div>
+
+    <div class="ag-label">Access Key</div>
+    <div class="ag-input-wrap">
+      <input
+        type="password"
+        id="ag-key-input"
+        class="ag-input"
+        placeholder="Inserisci la chiave di accesso…"
+        autocomplete="off"
+        spellcheck="false"
+        maxlength="64"
+        onkeydown="if(event.key==='Enter')agUnlock()"
+      />
+      <button class="ag-eye-btn" onclick="agToggleVis()" id="ag-eye-btn" title="Mostra/Nascondi">👁</button>
+    </div>
+
+    <button class="ag-btn" id="ag-unlock-btn" onclick="agUnlock()">
+      🔓 Sblocca Accesso
+    </button>
+
+    <div class="ag-error-msg" id="ag-error-msg"></div>
+
+    <div class="ag-rate-bar-wrap" id="ag-rate-bar-wrap">
+      <div class="ag-rate-bar-label" id="ag-rate-bar-label"></div>
+      <div class="ag-rate-bar-bg"><div class="ag-rate-bar-fill" id="ag-rate-bar-fill"></div></div>
+    </div>
+
+    <div class="ag-footer">
+      <span>⬡</span> Piattaforma protetta · Accesso monitorato · <span>CryptoTrade Pro v3</span>
+    </div>
+  </div>
+</div>
+
+
 <div id="app-loader" style="position:fixed;inset:0;background:#060910;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.4s;">
   <div style="width:40px;height:40px;border:3px solid rgba(99,102,241,0.3);border-top:3px solid #6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
   <div style="color:#6b7280;font-size:13px;margin-top:16px;">CryptoTrade Pro</div>
 </div>
-<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+<style>@keyframes spin{to{transform:rotate(360deg)}}
+/* ════════════════════════════════════════════════
+   ACCESS GATE — Emergency Lock Screen
+   ════════════════════════════════════════════════ */
+#access-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(6, 9, 16, 0.97);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1), visibility 0.6s;
+}
+#access-gate.unlocked {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+#access-gate .ag-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+#access-gate .ag-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  animation: ag-pulse 4s ease-in-out infinite alternate;
+}
+#access-gate .ag-orb-1 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+  top: -100px; left: -100px;
+  animation-delay: 0s;
+}
+#access-gate .ag-orb-2 {
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%);
+  bottom: -80px; right: -80px;
+  animation-delay: 2s;
+}
+@keyframes ag-pulse {
+  from { transform: scale(1) translate(0,0); opacity: 0.6; }
+  to   { transform: scale(1.15) translate(10px, -10px); opacity: 1; }
+}
+#access-gate .ag-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 20px;
+  background: rgba(15, 20, 35, 0.9);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 20px;
+  padding: 44px 40px 40px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.03),
+    0 40px 80px rgba(0,0,0,0.6),
+    0 0 60px rgba(99,102,241,0.08);
+  animation: ag-card-in 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes ag-card-in {
+  from { opacity: 0; transform: translateY(30px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+#access-gate .ag-logo-ring {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(16,185,129,0.1));
+  border: 1.5px solid rgba(99,102,241,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 24px;
+  box-shadow: 0 0 30px rgba(99,102,241,0.2);
+  animation: ag-logo-glow 2s ease-in-out infinite alternate;
+}
+@keyframes ag-logo-glow {
+  from { box-shadow: 0 0 20px rgba(99,102,241,0.15); }
+  to   { box-shadow: 0 0 40px rgba(99,102,241,0.4), 0 0 60px rgba(99,102,241,0.1); }
+}
+#access-gate .ag-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #e2e8f0;
+  margin-bottom: 6px;
+}
+#access-gate .ag-subtitle {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(148,163,184,0.7);
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+#access-gate .ag-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(148,163,184,0.6);
+  margin-bottom: 8px;
+}
+#access-gate .ag-input-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+#access-gate .ag-input {
+  width: 100%;
+  padding: 14px 48px 14px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  color: #e2e8f0;
+  font-size: 15px;
+  font-family: 'Inter', monospace;
+  letter-spacing: 2px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  box-sizing: border-box;
+}
+#access-gate .ag-input::placeholder {
+  letter-spacing: 0;
+  color: rgba(148,163,184,0.35);
+  font-size: 13px;
+}
+#access-gate .ag-input:focus {
+  border-color: rgba(99,102,241,0.6);
+  background: rgba(99,102,241,0.04);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+#access-gate .ag-input.ag-error {
+  border-color: rgba(239,68,68,0.6) !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
+  animation: ag-shake 0.4s ease;
+}
+@keyframes ag-shake {
+  0%,100%{ transform: translateX(0); }
+  20%    { transform: translateX(-8px); }
+  40%    { transform: translateX(8px); }
+  60%    { transform: translateX(-5px); }
+  80%    { transform: translateX(5px); }
+}
+#access-gate .ag-eye-btn {
+  position: absolute;
+  right: 14px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  color: rgba(148,163,184,0.5);
+  cursor: pointer; font-size: 16px;
+  padding: 0; line-height: 1;
+  transition: color 0.2s;
+}
+#access-gate .ag-eye-btn:hover { color: #e2e8f0; }
+#access-gate .ag-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  box-shadow: 0 4px 20px rgba(99,102,241,0.35);
+  margin-bottom: 0;
+}
+#access-gate .ag-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px rgba(99,102,241,0.5);
+}
+#access-gate .ag-btn:active:not(:disabled) { transform: translateY(0); }
+#access-gate .ag-btn:disabled {
+  opacity: 0.5; cursor: not-allowed;
+  background: linear-gradient(135deg, #4b5563, #374151);
+  box-shadow: none;
+}
+#access-gate .ag-btn.ag-loading {
+  pointer-events: none;
+}
+#access-gate .ag-error-msg {
+  min-height: 20px;
+  font-size: 11.5px;
+  color: #f87171;
+  text-align: center;
+  margin-top: 12px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+#access-gate .ag-error-msg.visible { opacity: 1; }
+#access-gate .ag-rate-bar-wrap {
+  margin-top: 16px;
+  display: none;
+}
+#access-gate .ag-rate-bar-label {
+  font-size: 10px;
+  color: rgba(239,68,68,0.7);
+  margin-bottom: 5px;
+  text-align: center;
+}
+#access-gate .ag-rate-bar-bg {
+  height: 3px;
+  background: rgba(239,68,68,0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+#access-gate .ag-rate-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  border-radius: 3px;
+  transition: width 1s linear;
+  width: 0%;
+}
+#access-gate .ag-footer {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 10px;
+  color: rgba(148,163,184,0.35);
+  letter-spacing: 0.3px;
+}
+#access-gate .ag-footer span { color: rgba(99,102,241,0.5); }
+/* Unlock success flash */
+#access-gate.unlocking .ag-card {
+  animation: ag-unlock-flash 0.5s ease forwards;
+}
+@keyframes ag-unlock-flash {
+  0%   { box-shadow: 0 40px 80px rgba(0,0,0,0.6); }
+  50%  { box-shadow: 0 0 80px rgba(16,185,129,0.4), 0 0 120px rgba(16,185,129,0.2); }
+  100% { box-shadow: 0 40px 80px rgba(0,0,0,0.2); }
+}
+</style>
 <!-- ── BANNER MODALITÀ TRADING ── -->
 <div id="trading-mode-banner" style="display:none;width:100%;text-align:center;padding:5px 0;font-size:11px;font-weight:700;letter-spacing:.5px;position:fixed;top:0;left:0;z-index:9999;"></div>
 <div id="banner-spacer" style="display:none;height:26px;flex-shrink:0;"></div>
@@ -586,6 +879,246 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--txt);}
     <button class="btn-lg" style="margin-top:14px;background:rgba(255,255,255,0.06);color:var(--txt);" onclick="closeModal('modal-api-inst')">Chiudi</button>
   </div>
 </div>
+
+
+<!-- ACCESS GATE SCRIPT — eseguito prima di ogni init -->
+<script>
+/* ═══════════════════════════════════════════════════════
+   ACCESS GATE — Engine di autenticazione locale
+   - Chiave: confronto timing-safe lato client
+   - Rate limiting: max 5 tentativi, lockout progressivo
+   - Sessione: unlocked salvato per tab lifetime (sessionStorage)
+   ═══════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  // ── CONFIGURAZIONE ─────────────────────────────────────
+  var AG_KEY        = 'CryptoPro2026';            // Chiave di accesso provvisoria
+  var AG_MAX_TRIES  = 5;                           // Tentativi massimi
+  var AG_BASE_LOCK  = 30;                          // Secondi di lockout base
+  var AG_SESSION_KEY= 'ag_unlocked';              // Key per sessionStorage
+  var AG_RL_KEY     = 'ag_rate_limit';            // Key per localStorage (rate limit persiste)
+
+  // ── STATO ──────────────────────────────────────────────
+  var agState = {
+    tries    : 0,
+    locked   : false,
+    lockUntil: 0,
+    lockTimer: null
+  };
+
+  // ── INIT: controlla se già sbloccato in questa tab ─────
+  function agInit() {
+    var gate = document.getElementById('access-gate');
+    if (!gate) return;
+
+    // Recupera stato rate limit da localStorage
+    try {
+      var rl = JSON.parse(localStorage.getItem(AG_RL_KEY)||'{}');
+      agState.tries     = rl.tries  || 0;
+      agState.lockUntil = rl.until  || 0;
+    } catch(e) {}
+
+    // Se già sbloccato in questa sessione → nasconde subito
+    if (sessionStorage.getItem(AG_SESSION_KEY) === '1') {
+      gate.style.display = 'none';
+      return;
+    }
+
+    // Se in lockout → mostra subito il countdown
+    var now = Date.now();
+    if (agState.lockUntil > now) {
+      agShowLockout(agState.lockUntil - now);
+    }
+
+    // Focus automatico sul campo
+    setTimeout(function(){ 
+      var inp = document.getElementById('ag-key-input');
+      if(inp) inp.focus();
+    }, 600);
+  }
+
+  // ── UNLOCK ─────────────────────────────────────────────
+  window.agUnlock = function() {
+    var now = Date.now();
+    if (agState.locked || agState.lockUntil > now) return;
+
+    var btn = document.getElementById('ag-unlock-btn');
+    var inp = document.getElementById('ag-key-input');
+    var err = document.getElementById('ag-error-msg');
+    if (!inp || !btn) return;
+
+    var val = inp.value;
+    if (!val.trim()) {
+      agShowError('⚠️ Inserisci la Access Key per continuare.');
+      inp.classList.add('ag-error');
+      setTimeout(function(){ inp.classList.remove('ag-error'); }, 600);
+      return;
+    }
+
+    // Stato loading
+    btn.disabled = true;
+    btn.classList.add('ag-loading');
+    btn.textContent = '⏳ Verifica in corso…';
+
+    // Ritardo anti-timing (80-180ms) per sicurezza
+    setTimeout(function() {
+      var ok = agTimingSafeCompare(val, AG_KEY);
+
+      if (ok) {
+        agGrantAccess();
+      } else {
+        agState.tries++;
+        agSaveRL();
+        btn.disabled = false;
+        btn.classList.remove('ag-loading');
+        btn.textContent = '🔓 Sblocca Accesso';
+        inp.value = '';
+        inp.classList.add('ag-error');
+        setTimeout(function(){ inp.classList.remove('ag-error'); }, 600);
+
+        var remaining = AG_MAX_TRIES - agState.tries;
+        if (remaining <= 0) {
+          var lockSeconds = AG_BASE_LOCK * Math.pow(2, Math.floor(agState.tries / AG_MAX_TRIES) - 1);
+          lockSeconds = Math.min(lockSeconds, 3600); // max 1 ora
+          var lockUntil = Date.now() + lockSeconds * 1000;
+          agState.lockUntil = lockUntil;
+          agSaveRL();
+          agShowLockout(lockSeconds * 1000);
+        } else if (remaining === 1) {
+          agShowError('❌ Chiave errata. Ultimo tentativo rimasto prima del blocco.');
+        } else {
+          agShowError('❌ Chiave non valida. Tentativi rimasti: ' + remaining);
+        }
+        inp.focus();
+      }
+    }, 80 + Math.random() * 100);
+  };
+
+  // ── ACCESSO CONCESSO ────────────────────────────────────
+  function agGrantAccess() {
+    var gate = document.getElementById('access-gate');
+    var card = gate ? gate.querySelector('.ag-card') : null;
+    var btn  = document.getElementById('ag-unlock-btn');
+
+    // Salva in sessionStorage
+    try { sessionStorage.setItem(AG_SESSION_KEY, '1'); } catch(e){}
+    // Reset rate limit
+    try { localStorage.removeItem(AG_RL_KEY); } catch(e){}
+    agState.tries = 0; agState.lockUntil = 0;
+
+    // Animazione successo
+    if(btn){
+      btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+      btn.textContent = '✅ Accesso consentito';
+    }
+    if(gate) gate.classList.add('unlocking');
+
+    setTimeout(function(){
+      if(gate){
+        gate.classList.add('unlocked');
+        // Rimuove dal DOM dopo animazione
+        setTimeout(function(){ 
+          if(gate && gate.parentNode) gate.parentNode.removeChild(gate); 
+        }, 700);
+      }
+    }, 500);
+  }
+
+  // ── LOCKOUT ─────────────────────────────────────────────
+  function agShowLockout(msRemaining) {
+    var btn   = document.getElementById('ag-unlock-btn');
+    var inp   = document.getElementById('ag-key-input');
+    var wrap  = document.getElementById('ag-rate-bar-wrap');
+    var fill  = document.getElementById('ag-rate-bar-fill');
+    var label = document.getElementById('ag-rate-bar-label');
+    var err   = document.getElementById('ag-error-msg');
+
+    agState.locked = true;
+    if(btn) { btn.disabled = true; btn.textContent = '🚫 Accesso temporaneamente bloccato'; }
+    if(inp) { inp.disabled = true; }
+    if(wrap) { wrap.style.display = 'block'; }
+    if(err) { err.classList.add('visible'); err.textContent = ''; }
+
+    var totalMs = msRemaining;
+    var endAt   = Date.now() + msRemaining;
+
+    // Barra progressiva
+    if(fill) {
+      fill.style.transition = 'none';
+      fill.style.width = '100%';
+      setTimeout(function(){
+        fill.style.transition = 'width '+Math.ceil(totalMs/1000)+'s linear';
+        fill.style.width = '0%';
+      }, 50);
+    }
+
+    function tick() {
+      var left = endAt - Date.now();
+      if (left <= 0) {
+        agState.locked = false;
+        if(btn) { btn.disabled = false; btn.textContent = '🔓 Sblocca Accesso'; }
+        if(inp) { inp.disabled = false; inp.focus(); }
+        if(wrap) { wrap.style.display = 'none'; }
+        agShowError('');
+        return;
+      }
+      var secs = Math.ceil(left / 1000);
+      var mins = Math.floor(secs / 60);
+      var s    = secs % 60;
+      var txt  = mins > 0 ? mins+'m '+s+'s' : s+'s';
+      if(label) label.textContent = '🚫 Blocco attivo — riprova tra ' + txt;
+      agState.lockTimer = setTimeout(tick, 500);
+    }
+    tick();
+  }
+
+  // ── HELPERS ─────────────────────────────────────────────
+  function agShowError(msg) {
+    var el = document.getElementById('ag-error-msg');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle('visible', !!msg);
+  }
+
+  function agSaveRL() {
+    try {
+      localStorage.setItem(AG_RL_KEY, JSON.stringify({
+        tries: agState.tries,
+        until: agState.lockUntil
+      }));
+    } catch(e) {}
+  }
+
+  // Confronto timing-safe (evita attacchi timing per indovinare la chiave)
+  function agTimingSafeCompare(a, b) {
+    if (typeof a !== 'string' || typeof b !== 'string') return false;
+    var maxLen = Math.max(a.length, b.length);
+    var diff = a.length === b.length ? 0 : 1;
+    for (var i = 0; i < maxLen; i++) {
+      diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+    }
+    return diff === 0;
+  }
+
+  window.agToggleVis = function() {
+    var inp = document.getElementById('ag-key-input');
+    var btn = document.getElementById('ag-eye-btn');
+    if (!inp) return;
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    if (btn) btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+    inp.focus();
+  };
+
+  // ── AVVIO ───────────────────────────────────────────────
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', agInit);
+  } else {
+    agInit();
+  }
+
+})();
+</script>
 
 <script>
 // ████████████████████████████████████████████
@@ -3004,37 +3537,54 @@ function loadTradingViewWidget(symbol) {
   if (!container) return;
   container.innerHTML = '';
   const tvSymbol = symbol === 'SPY' ? 'AMEX:SPY' : 'NASDAQ:' + symbol;
+  const containerId = 'tv-stocks-' + Date.now();
+
+  // Crea il wrapper
   const wrapper = document.createElement('div');
   wrapper.className = 'tradingview-widget-container';
   wrapper.style.height = '380px';
-  wrapper.innerHTML = `
-    <div class="tradingview-widget-container__widget" style="height:380px;"></div>
-    <script type="text/javascript">
-    new TradingView.widget({
-      "autosize": false,
-      "width": "100%",
-      "height": 380,
-      "symbol": "${tvSymbol}",
-      "interval": "D",
-      "timezone": "Europe/Rome",
-      "theme": "dark",
-      "style": "1",
-      "locale": "it",
-      "toolbar_bg": "#0d1117",
-      "enable_publishing": false,
-      "hide_side_toolbar": true,
-      "allow_symbol_change": true,
-      "container_id": "tv-stocks-widget-${Date.now()}"
-    });
-    <\/script>`;
+
+  const widgetDiv = document.createElement('div');
+  widgetDiv.className = 'tradingview-widget-container__widget';
+  widgetDiv.style.height = '380px';
+  wrapper.appendChild(widgetDiv);
+  widgetDiv.id = containerId;
+
+  // Crea il tag script TradingView tramite createElement (evita problemi parser HTML)
+  const tvScript = document.createElement('script');
+  tvScript.type = 'text/javascript';
+  tvScript.src = 'https://s3.tradingview.com/tv.js';
+  tvScript.onload = function() {
+    if (window.TradingView) {
+      new TradingView.widget({
+        autosize: false,
+        width: '100%',
+        height: 380,
+        symbol: tvSymbol,
+        interval: 'D',
+        timezone: 'Europe/Rome',
+        theme: 'dark',
+        style: '1',
+        locale: 'it',
+        toolbar_bg: '#0d1117',
+        enable_publishing: false,
+        hide_side_toolbar: true,
+        allow_symbol_change: true,
+        container_id: containerId
+      });
+    }
+  };
+  wrapper.appendChild(tvScript);
   container.appendChild(wrapper);
+
   // Fallback: grafico simulato con LightweightCharts
   setTimeout(() => {
     if (!container.querySelector('iframe')) {
       drawSimulatedStockChart(symbol);
     }
-  }, 2000);
+  }, 3000);
 }
+
 
 function drawSimulatedStockChart(symbol) {
   const container = document.getElementById('stocks-tv-container');

@@ -140,9 +140,12 @@ function RegisterForm({ onSwitch }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
+  const [tosAccepted, setTosAccepted] = useState(false);
+  const [showTos, setShowTos] = useState(false);
   
   const doRegister = async e => {
     e.preventDefault();
+    if (!tosAccepted) { setErr("Devi accettare i Termini e le Condizioni per procedere."); return; }
     if (form.password !== form.confirmPwd) { setErr("Le password non coincidono"); return; }
     if (form.password.length < 8) { setErr("Password minimo 8 caratteri"); return; }
     
@@ -190,7 +193,35 @@ function RegisterForm({ onSwitch }) {
       React.createElement("input", { type: "password", placeholder: "••••••••", value: form.password, onChange: e => setForm({ ...form, password: e.target.value }), disabled: loading }),
       React.createElement("label", null, "Conferma password"),
       React.createElement("input", { type: "password", placeholder: "••••••••", value: form.confirmPwd, onChange: e => setForm({ ...form, confirmPwd: e.target.value }), disabled: loading }),
-      React.createElement("button", { type: "submit", className: "btn btn-primary", disabled: loading }, loading ? "Caricamento..." : "Registrati")
+      React.createElement("div", {style:{display:'flex',alignItems:'flex-start',gap:'10px',margin:'12px 0',padding:'10px',background:'rgba(99,102,241,.06)',border:'1px solid rgba(99,102,241,.2)',borderRadius:'8px'}},
+        React.createElement("input", {type:"checkbox", id:"tos-check", checked:tosAccepted, onChange:function(e){setTosAccepted(e.target.checked);}, style:{marginTop:'2px',cursor:'pointer',accentColor:'#6366f1'}}),
+        React.createElement("label", {htmlFor:"tos-check", style:{fontSize:'12px',color:'#9ca3af',cursor:'pointer',lineHeight:'1.5'}},
+          "Ho letto e accetto i ",
+          React.createElement("span", {onClick:function(e){e.preventDefault();setShowTos(true);}, style:{color:'#6366f1',textDecoration:'underline',cursor:'pointer'}}, "Termini e le Condizioni"),
+          " di utilizzo della piattaforma."
+        )
+      ),
+      React.createElement("button", { type: "submit", className: "btn btn-primary", disabled: loading || !tosAccepted }, loading ? "Caricamento..." : "Registrati"),
+      showTos && React.createElement("div", {style:{position:'fixed',inset:0,background:'rgba(0,0,0,.85)',zIndex:9999,overflowY:'auto',display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'40px 16px'}},
+        React.createElement("div", {style:{background:'#1a1f2e',border:'1px solid rgba(255,255,255,.1)',borderRadius:'14px',padding:'24px',maxWidth:'600px',width:'100%',position:'relative'}},
+          React.createElement("button", {onClick:function(){setShowTos(false);}, style:{position:'absolute',top:'12px',right:'16px',background:'none',border:'none',color:'#9ca3af',fontSize:'20px',cursor:'pointer'}}, "✕"),
+          React.createElement("h3", {style:{color:'#e2e8f0',marginBottom:'16px',fontSize:'16px',fontWeight:'700'}}, "📋 Termini e Condizioni di Utilizzo"),
+          React.createElement("div", {style:{color:'#9ca3af',fontSize:'12px',lineHeight:'1.8',maxHeight:'400px',overflowY:'auto',paddingRight:'8px'}},
+            React.createElement("p", null, "Ultimo aggiornamento: Giugno 2026"),
+            React.createElement("p", {style:{marginTop:'12px',fontWeight:'700',color:'#e2e8f0'}}, "1. Natura del Servizio"),
+            React.createElement("p", null, "CryptoTrade Pro è una piattaforma di paper trading ed analisi. Le operazioni nella modalità Paper Trading usano capitale virtuale e non comportano movimentazione di fondi reali."),
+            React.createElement("p", {style:{marginTop:'12px',fontWeight:'700',color:'#e2e8f0'}}, "2. Nessuna Consulenza Finanziaria"),
+            React.createElement("p", null, "Le informazioni fornite (prezzi, grafici, indicatori) hanno natura informativa. Non costituisce consulenza finanziaria, fiscale o legale."),
+            React.createElement("p", {style:{marginTop:'12px',fontWeight:'700',color:'#e2e8f0'}}, "3. Rischi"),
+            React.createElement("p", null, "Il trading di criptovalute comporta rischi significativi. I rendimenti passati non garantiscono risultati futuri."),
+            React.createElement("p", {style:{marginTop:'12px',fontWeight:'700',color:'#e2e8f0'}}, "4. Privacy"),
+            React.createElement("p", null, "I dati vengono archiviati esclusivamente nel tuo browser (localStorage). Nessuna trasmissione a server terzi senza consenso."),
+            React.createElement("p", {style:{marginTop:'12px',fontWeight:'700',color:'#e2e8f0'}}, "5. Accettazione"),
+            React.createElement("p", null, "Utilizzando la piattaforma dichiari di avere almeno 18 anni e di accettare integralmente i presenti Termini.")
+          ),
+          React.createElement("button", {className:"btn btn-primary", onClick:function(){setTosAccepted(true);setShowTos(false);}, style:{marginTop:'16px',width:'100%'}}, "✅ Accetto i Termini")
+        )
+      )
     ),
     React.createElement("div", { style: { textAlign: 'center', marginTop: '16px', fontSize: '12px' } },
       React.createElement("button", { type: "button", className: "btn-secondary", onClick: () => onSwitch("login"), style: { background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer' } }, "Hai già un account? Accedi")

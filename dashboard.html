@@ -3129,7 +3129,125 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>
 
-    </div>
+    
+      <!-- ════════ FORMSPREE CONFIG ════════ -->
+      <div class="card" style="border:1px solid rgba(99,102,241,.25);">
+        <div class="card-title">📧 Notifiche Feedback (Admin)</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">
+          Configura un endpoint <a href="https://formspree.io" target="_blank" style="color:var(--accent2);">Formspree</a> (gratuito) per ricevere i feedback degli utenti via email.
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input id="setting-formspree" type="text" placeholder="https://formspree.io/f/xxxxxxxx"
+            style="flex:1;min-width:220px;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:8px 10px;color:var(--txt);font-size:12px;"
+            oninput="localStorage.setItem('ctp_formspree_endpoint',this.value)"
+            value="">
+          <button class="btn-sm primary" onclick="
+            const v=document.getElementById('setting-formspree').value.trim();
+            if(!v){showToast('⚠️ Inserisci un endpoint valido','#f59e0b');return;}
+            localStorage.setItem('ctp_formspree_endpoint',v);
+            showToast('✅ Endpoint salvato','#10b981');
+          ">💾 Salva</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px;">
+          ℹ️ Crea un form gratuito su <strong>formspree.io</strong>, copia il link e incollalo qui. Ogni segnalazione beta arriverà direttamente nella tua inbox.
+        </div>
+      </div>
+
+      <!-- ════════ MANUALE UTENTE ════════ -->
+      <div class="card" id="user-manual-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div class="card-title" style="margin:0;">📖 Manuale Utente — CryptoTrade Pro</div>
+          <button onclick="document.getElementById('user-manual-body').style.display=document.getElementById('user-manual-body').style.display==='none'?'block':'none'"
+            style="background:rgba(255,255,255,.05);border:1px solid var(--b);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;">
+            Mostra/Nascondi
+          </button>
+        </div>
+        <div id="user-manual-body" style="display:block;">
+          <div style="display:flex;flex-direction:column;gap:14px;font-size:12px;color:var(--txt);line-height:1.7;">
+
+            <div style="background:rgba(99,102,241,.08);border-left:3px solid var(--accent2);border-radius:0 6px 6px 0;padding:10px 14px;">
+              <strong style="font-size:13px;">🚀 Quick Start</strong><br>
+              Registrati → accedi → seleziona una coppia nella <strong>Watchlist</strong> → analizza il grafico → inserisci un ordine dal pannello <strong>Order Form</strong>.
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:var(--accent2);margin-bottom:6px;">📊 1. Dashboard Trading</div>
+              <div style="padding-left:12px;">
+                • <strong>Grafico:</strong> aggiornato in tempo reale via WebSocket Binance (intervallo configurabile: 1m, 5m, 15m, 1h, 4h, 1D).<br>
+                • <strong>Order Book:</strong> visualizza i migliori 12 livelli di bid/ask in tempo reale.<br>
+                • <strong>Order Form:</strong> supporta ordini Market, Limit e Stop-Limit. Seleziona la leva (1x–100x), inserisci la quantità e conferma.<br>
+                • <strong>Posizioni:</strong> tab inferiore con PnL live calcolato tick-by-tick. Il pulsante "Chiudi" esegue la chiusura al prezzo corrente.<br>
+                • <strong>Ordini Pendenti:</strong> gestisci e cancella gli ordini Limit non ancora eseguiti.<br>
+                • <strong>Storico:</strong> registro completo con volume acquisti/vendite, commissioni e P&L netto.
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#10b981;margin-bottom:6px;">👁 2. Watchlist</div>
+              <div style="padding-left:12px;">
+                • Filtra per categoria (DeFi, Layer1, Layer2, Stablecoin, Meme, Top 20) o usa la ricerca testuale.<br>
+                • Clicca ★ per aggiungere/rimuovere dai <strong>Preferiti</strong>.<br>
+                • I prezzi si aggiornano ogni 10 secondi tramite Binance 24hr ticker batch API.<br>
+                • Clicca su un asset per aprirlo direttamente nel pannello Trading.
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#a855f7;margin-bottom:6px;">🌐 3. DeFi Hub</div>
+              <div style="padding-left:12px;">
+                • <strong>Wallet:</strong> aggiungi indirizzi EVM/Solana per monitorare il saldo on-chain.<br>
+                • <strong>Token:</strong> visualizza il portafoglio token per ogni wallet connesso.<br>
+                • <strong>Grafico DeFi:</strong> powered by GeckoTerminal — analisi pool AMM in tempo reale.<br>
+                • <strong>Notifiche:</strong> configura alert prezzo e movimento whale.
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#f59e0b;margin-bottom:6px;">📈 4. Mercati Azionari (TradFi)</div>
+              <div style="padding-left:12px;">
+                • <strong>Paper Trading</strong> con €100.000 di capitale virtuale iniziale.<br>
+                • Spread markup configurabile (0.1%–0.5%) gestito dal pannello Admin.<br>
+                • Acquista e vendi azioni simulate con grafici TradingView integrati.<br>
+                • Storico ordini completo con calcolo automatico del P&L per posizione.
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#ef4444;margin-bottom:6px;">🔐 5. Sicurezza</div>
+              <div style="padding-left:12px;">
+                • <strong>2FA:</strong> attiva l'autenticazione a due fattori via TOTP (Google Authenticator).<br>
+                • <strong>API Keys:</strong> le chiavi vengono cifrate localmente con AES-256 prima del salvataggio.<br>
+                • <strong>Sessioni:</strong> visualizza e termina le sessioni attive da altri dispositivi.<br>
+                • <strong>PIN:</strong> imposta un PIN di accesso rapido per sessioni brevi.
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#06b6d4;margin-bottom:6px;">⚙️ 6. Impostazioni</div>
+              <div style="padding-left:12px;">
+                • Lingua, valuta di riferimento, slippage e tema (light/dark).<br>
+                • Notifiche push, sound alert e alert prezzo personalizzati.<br>
+                • Connessione exchange tramite API key (Binance, Bybit, OKX, ecc.).<br>
+                • Formspree endpoint per ricevere i feedback beta via email.
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#6b7280;margin-bottom:6px;">🐛 7. Beta Feedback</div>
+              <div style="padding-left:12px;">
+                • Clicca <strong>"🐛 Beta Feedback"</strong> nella barra di navigazione per inviare segnalazioni.<br>
+                • Classifica il tipo (Bug, Feature Request, Miglioramento, Performance) e la severità.<br>
+                • Il feedback viene salvato localmente e (se configurato) inviato via email all'admin.
+              </div>
+            </div>
+
+            <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);">
+              🔒 <strong>Privacy:</strong> tutti i dati (wallet, API keys, preferenze) sono archiviati <em>esclusivamente</em> nel tuo browser (localStorage). Nessun dato viene trasmesso a server terzi senza esplicita autorizzazione.
+            </div>
+          </div>
+        </div>
+      </div>
+</div>
   </div>
 
 

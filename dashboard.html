@@ -50,10 +50,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--txt);}
 .nav-btn:hover,.nav-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 
 /* ── LAYOUT ── */
-#app{overflow:hidden;display:flex;flex-direction:column;height:100%;}
+#app{display:flex;flex-direction:column;height:100%;}
 .page{display:none;flex:1;min-height:0;}
-.page.active{display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;}
-#page-defi.active,#page-stocks.active,#page-settings.active{overflow:auto !important;display:flex !important;flex-direction:column !important;min-height:0 !important;}
+.page.active{display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;height:calc(100vh - 80px);}
+#page-defi.active,#page-stocks.active,#page-settings.active{overflow:auto !important;display:flex !important;flex-direction:column !important;height:calc(100% - 46px) !important;}
 
 /* ── CARD ── */
 .card{background:var(--bg2);border:1px solid var(--b);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;}
@@ -850,6 +850,463 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--txt);}
     </div>
   </div><!-- /page-security -->
 
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PAGE: DEFI HUB
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="page-defi" class="page" style="overflow:auto;">
+    <div style="padding:12px;display:flex;flex-direction:column;gap:12px;">
+      <!-- Header DeFi -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:16px;font-weight:800;background:linear-gradient(135deg,#6366f1,#a855f7,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">🌐 DeFi Hub</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Gestisci i tuoi wallet DeFi e token on-chain</div>
+        </div>
+        <button onclick="openAddWalletModal()" style="padding:7px 16px;background:linear-gradient(135deg,#6366f1,#a855f7);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">+ Aggiungi Wallet</button>
+      </div>
+
+      <!-- Multi-Wallet Cards -->
+      <div id="defi-wallets-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;"></div>
+
+      <!-- Portfolio Pie Chart + Token List -->
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:12px;flex-wrap:wrap;">
+        <div class="card" style="padding:14px;">
+          <div class="card-hdr" style="margin:-14px -14px 12px -14px;"><span class="card-title">🥧 Portfolio Distribution</span></div>
+          <canvas id="defi-pie-chart" width="260" height="260" style="display:block;margin:0 auto;"></canvas>
+          <div id="defi-pie-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:4px;"></div>
+        </div>
+        <div class="card" style="padding:14px;">
+          <div class="card-hdr" style="margin:-14px -14px 12px -14px;">
+            <span class="card-title">💎 Token nel Portfolio</span>
+            <button onclick="refreshDefiTokens()" style="font-size:10px;padding:3px 8px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:5px;color:var(--accent);cursor:pointer;">🔄 Aggiorna</button>
+          </div>
+          <div id="defi-token-list" style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;"></div>
+        </div>
+      </div>
+
+      <!-- Grafico Prezzo Token DeFi -->
+      <div class="card" style="padding:14px;">
+        <div class="card-hdr" style="margin:-14px -14px 12px -14px;">
+          <span class="card-title">📊 Grafico Prezzi Token DeFi</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="defi-token-select" onchange="loadDefiChart()" style="background:var(--bg3);border:1px solid var(--b);border-radius:5px;color:var(--txt);font-size:11px;padding:3px 8px;">
+              <option value="uniswap">UNI/USDT</option>
+              <option value="aave">AAVE/USDT</option>
+              <option value="compound-governance-token">COMP/USDT</option>
+              <option value="curve-dao-token">CRV/USDT</option>
+              <option value="maker">MKR/USDT</option>
+              <option value="chainlink">LINK/USDT</option>
+              <option value="the-graph">GRT/USDT</option>
+            </select>
+            <select id="defi-chart-days" onchange="loadDefiChart()" style="background:var(--bg3);border:1px solid var(--b);border-radius:5px;color:var(--txt);font-size:11px;padding:3px 8px;">
+              <option value="1">1G</option>
+              <option value="7" selected>7G</option>
+              <option value="30">30G</option>
+              <option value="90">90G</option>
+            </select>
+          </div>
+        </div>
+        <div id="defi-chart-container" style="height:280px;position:relative;"></div>
+      </div>
+
+      <!-- Notifiche Blockchain -->
+      <div class="card" style="padding:14px;">
+        <div class="card-hdr" style="margin:-14px -14px 12px -14px;">
+          <span class="card-title">🔔 Notifiche Blockchain</span>
+          <span id="notif-badge" style="background:rgba(239,68,68,.15);color:var(--red);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;display:none;">0 nuove</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button onclick="testNotif('pending')" style="padding:5px 12px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:var(--yellow);font-size:11px;cursor:pointer;">⏳ Test Pending</button>
+          <button onclick="testNotif('success')" style="padding:5px 12px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:6px;color:var(--green);font-size:11px;cursor:pointer;">✅ Test Success</button>
+          <button onclick="testNotif('failed')" style="padding:5px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:var(--red);font-size:11px;cursor:pointer;">❌ Test Failed</button>
+          <button onclick="testNotif('health')" style="padding:5px 12px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:6px;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;animation:blink 1.2s infinite;">⚠️ Test Health Factor</button>
+        </div>
+        <div id="notif-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PAGE: MERCATI AZIONARI (TRADFI)
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="page-stocks" class="page" style="overflow:auto;">
+    <div style="padding:12px;display:flex;flex-direction:column;gap:12px;">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:16px;font-weight:800;background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">📈 Mercati Azionari</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Paper Trading — $100,000 virtuali • Dati reali di mercato</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:6px 14px;text-align:center;">
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;">Saldo Virtuale</div>
+            <div id="stocks-balance" style="font-size:14px;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace;">$100,000.00</div>
+          </div>
+          <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:6px 14px;text-align:center;">
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;">P&L Portfolio</div>
+            <div id="stocks-pnl" style="font-size:14px;font-weight:700;color:var(--yellow);font-family:'JetBrains Mono',monospace;">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paywall Banner (per non-premium) -->
+      <div id="stocks-paywall" style="display:none;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(168,85,247,.15));border:1px solid rgba(99,102,241,.4);border-radius:12px;padding:20px;text-align:center;">
+        <div style="font-size:24px;margin-bottom:8px;">🔒</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Funzionalità Premium</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Accedi ai mercati azionari in tempo reale e invia ordini con il piano Premium</div>
+        <button onclick="showToast('Funzionalità disponibile nella versione completa!','#6366f1')" style="padding:10px 28px;background:linear-gradient(135deg,#6366f1,#a855f7);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">⭐ Passa a Premium</button>
+      </div>
+
+      <div id="stocks-content">
+        <!-- Search Bar -->
+        <div class="card" style="padding:12px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <input id="stocks-search" type="text" placeholder="Cerca ticker: AAPL, TSLA, NVDA, AMZN..." 
+              style="flex:1;min-width:200px;background:var(--bg1);border:1px solid var(--b);border-radius:8px;padding:10px 14px;color:#fff;font-size:12px;outline:none;font-family:'JetBrains Mono',monospace;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--b)'"
+              onkeypress="if(event.key==='Enter')searchStock()"/>
+            <button onclick="searchStock()" style="padding:10px 20px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">🔍 Cerca</button>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+              <button onclick="loadStockQuick('AAPL')" class="nav-btn">AAPL</button>
+              <button onclick="loadStockQuick('TSLA')" class="nav-btn">TSLA</button>
+              <button onclick="loadStockQuick('NVDA')" class="nav-btn">NVDA</button>
+              <button onclick="loadStockQuick('AMZN')" class="nav-btn">AMZN</button>
+              <button onclick="loadStockQuick('MSFT')" class="nav-btn">MSFT</button>
+              <button onclick="loadStockQuick('SPY')" class="nav-btn">S&P500</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stock Info + Chart + Order Form -->
+        <div style="display:grid;grid-template-columns:1fr 260px;gap:12px;margin-top:12px;">
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <!-- Stock Info Bar -->
+            <div id="stock-info-bar" class="card" style="padding:12px;display:none;">
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <div style="font-size:20px;font-weight:800;" id="stock-symbol-display">—</div>
+                <div>
+                  <div style="font-size:11px;color:var(--muted);" id="stock-name-display">—</div>
+                  <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+                    <span style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;" id="stock-price-display">$—</span>
+                    <span style="font-size:12px;font-family:'JetBrains Mono',monospace;" id="stock-change-display">—</span>
+                  </div>
+                </div>
+                <div style="margin-left:auto;display:flex;gap:16px;flex-wrap:wrap;">
+                  <div><div style="font-size:9px;color:var(--muted);">OPEN</div><div style="font-size:11px;font-family:'JetBrains Mono',monospace;" id="stock-open">—</div></div>
+                  <div><div style="font-size:9px;color:var(--muted);">HIGH</div><div style="font-size:11px;font-family:'JetBrains Mono',monospace;" id="stock-high">—</div></div>
+                  <div><div style="font-size:9px;color:var(--muted);">LOW</div><div style="font-size:11px;font-family:'JetBrains Mono',monospace;" id="stock-low">—</div></div>
+                  <div><div style="font-size:9px;color:var(--muted);">VOLUME</div><div style="font-size:11px;font-family:'JetBrains Mono',monospace;" id="stock-volume">—</div></div>
+                  <div><div style="font-size:9px;color:var(--muted);">MKT CAP</div><div style="font-size:11px;font-family:'JetBrains Mono',monospace;" id="stock-mktcap">—</div></div>
+                </div>
+              </div>
+            </div>
+            <!-- TradingView Chart -->
+            <div class="card" style="padding:0;overflow:hidden;">
+              <div id="stocks-tv-container" style="height:380px;">
+                <div id="stocks-chart-placeholder" style="height:380px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--muted);">
+                  <div style="font-size:32px;">📊</div>
+                  <div style="font-size:13px;">Cerca un titolo per visualizzare il grafico</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Form -->
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="card" style="padding:14px;">
+              <div style="font-size:12px;font-weight:700;margin-bottom:10px;">📋 Piazza Ordine</div>
+              <div style="display:flex;gap:3px;background:rgba(255,255,255,.04);border-radius:7px;padding:2px;margin-bottom:10px;">
+                <button class="tab-btn active" id="sord-market-btn" onclick="setStockOrderType('market')">Market</button>
+                <button class="tab-btn" id="sord-limit-btn" onclick="setStockOrderType('limit')">Limit</button>
+              </div>
+              <!-- Tipo investimento -->
+              <div style="margin-bottom:8px;">
+                <div class="inp-lbl">Tipo investimento</div>
+                <select id="stock-invest-type" onchange="toggleStockInvestType()" style="width:100%;background:rgba(255,255,255,.04);color:#fff;border:1px solid var(--b);border-radius:6px;padding:5px 8px;font-size:12px;">
+                  <option value="shares">Numero azioni</option>
+                  <option value="amount">Importo fisso (€/$)</option>
+                </select>
+              </div>
+              <div id="stock-qty-row" style="margin-bottom:8px;">
+                <div class="inp-lbl">Quantità azioni</div>
+                <input id="stock-qty" type="number" step="0.001" min="0" class="inp" placeholder="0.00" oninput="calcStockOrder()"/>
+              </div>
+              <div id="stock-amount-row" style="margin-bottom:8px;display:none;">
+                <div class="inp-lbl">Importo ($)</div>
+                <input id="stock-amount" type="number" step="1" min="0" class="inp" placeholder="es. 100" oninput="calcStockOrder()"/>
+              </div>
+              <div id="stock-limit-price-row" style="margin-bottom:8px;display:none;">
+                <div class="inp-lbl">Prezzo Limite ($)</div>
+                <input id="stock-limit-price" type="number" step="0.01" min="0" class="inp" placeholder="0.00"/>
+              </div>
+              <!-- Riepilogo -->
+              <div style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.18);border-radius:6px;padding:8px;margin-bottom:10px;font-size:11px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:var(--muted);">Prezzo</span><span id="sord-price" style="font-family:'JetBrains Mono',monospace;">$—</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:var(--muted);">Quantità</span><span id="sord-qty-display" style="font-family:'JetBrains Mono',monospace;">—</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:var(--muted);">Spread (0.1%)</span><span id="sord-spread" style="font-family:'JetBrains Mono',monospace;color:var(--yellow);">$0.00</span></div>
+                <div style="display:flex;justify-content:space-between;font-weight:700;"><span>Totale</span><span id="sord-total" style="font-family:'JetBrains Mono',monospace;color:var(--accent);">$0.00</span></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                <button class="btn-buy" onclick="placeStockOrder('buy')">▲ COMPRA</button>
+                <button class="btn-sell" onclick="placeStockOrder('sell')">▼ VENDI</button>
+              </div>
+            </div>
+
+            <!-- Portfolio Azionario -->
+            <div class="card" style="padding:14px;">
+              <div style="font-size:11px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">📂 Le Mie Azioni</div>
+              <div id="stocks-portfolio-list" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto;">
+                <div style="text-align:center;color:var(--muted);font-size:11px;padding:16px;">Nessuna posizione</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Storico Ordini Azionari -->
+        <div class="card" style="margin-top:12px;padding:14px;">
+          <div style="font-size:11px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">📜 Storico Ordini</div>
+          <div style="overflow:auto;max-height:200px;">
+            <table class="dt" id="stocks-history-table">
+              <thead><tr>
+                <th>Data/Ora</th><th>Ticker</th><th>Tipo</th><th>Qta</th><th>Prezzo</th><th>Spread</th><th>Totale</th><th>P&L</th>
+              </tr></thead>
+              <tbody id="stocks-history-body"><tr><td colspan="8" class="empty">Nessun ordine</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       PAGE: IMPOSTAZIONI
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="page-settings" class="page" style="overflow:auto;">
+    <div style="padding:16px;max-width:860px;display:flex;flex-direction:column;gap:16px;">
+      
+      <div style="font-size:16px;font-weight:800;margin-bottom:4px;">⚙️ Impostazioni</div>
+
+      <!-- Localizzazione -->
+      <div class="card" style="padding:14px;">
+        <div class="sec-hdr">🌍 Localizzazione</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div class="inp-lbl">Lingua Interfaccia</div>
+            <select id="setting-lang" onchange="saveSetting('lang',this.value)" style="width:100%;background:rgba(255,255,255,.04);color:#fff;border:1px solid var(--b);border-radius:6px;padding:8px 10px;font-size:12px;">
+              <option value="it">🇮🇹 Italiano</option>
+              <option value="en">🇬🇧 English</option>
+              <option value="es">🇪🇸 Español</option>
+              <option value="fr">🇫🇷 Français</option>
+              <option value="de">🇩🇪 Deutsch</option>
+            </select>
+          </div>
+          <div>
+            <div class="inp-lbl">Valuta di Riferimento</div>
+            <select id="setting-currency" onchange="saveSetting('currency',this.value)" style="width:100%;background:rgba(255,255,255,.04);color:#fff;border:1px solid var(--b);border-radius:6px;padding:8px 10px;font-size:12px;">
+              <option value="USD">🇺🇸 USD — Dollaro</option>
+              <option value="EUR">🇪🇺 EUR — Euro</option>
+              <option value="GBP">🇬🇧 GBP — Sterlina</option>
+              <option value="JPY">🇯🇵 JPY — Yen</option>
+              <option value="CHF">🇨🇭 CHF — Franco Svizzero</option>
+              <option value="BTC">₿ BTC — Bitcoin</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slippage Tolerance -->
+      <div class="card" style="padding:14px;">
+        <div class="sec-hdr">⚖️ Slippage Tolerance (Swap DeFi)</div>
+        <div style="margin-bottom:10px;font-size:11px;color:var(--muted);line-height:1.6;">Percentuale massima di variazione di prezzo accettabile prima che la transazione venga annullata automaticamente.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <button onclick="setSlippage(0.1)" id="slip-01" class="pct-btn">0.1%</button>
+          <button onclick="setSlippage(0.5)" id="slip-05" class="pct-btn active">0.5%</button>
+          <button onclick="setSlippage(1.0)" id="slip-10" class="pct-btn">1.0%</button>
+          <button onclick="setSlippage(2.0)" id="slip-20" class="pct-btn">2.0%</button>
+          <button onclick="setSlippage(3.0)" id="slip-30" class="pct-btn">3.0%</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--muted);">Custom:</span>
+          <input id="slip-custom" type="number" step="0.1" min="0.01" max="50" class="inp" style="width:100px;" placeholder="es. 1.5"
+            onchange="setSlippage(parseFloat(this.value))"/>
+          <span style="font-size:11px;color:var(--muted);">%</span>
+          <span style="font-size:12px;color:var(--yellow);font-weight:700;" id="slip-display">Attuale: 0.5%</span>
+        </div>
+      </div>
+
+      <!-- Gestione RPC -->
+      <div class="card" style="padding:14px;">
+        <div class="sec-hdr">🔧 Gestione RPC (Advanced)</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6;">Personalizza i nodi RPC usati per connettersi alle blockchain. Utile per migliorare velocità o usare nodi privati.</div>
+        <div style="display:flex;flex-direction:column;gap:10px;" id="rpc-list">
+          <!-- populated by JS -->
+        </div>
+        <button onclick="addRpcRow()" style="margin-top:10px;padding:6px 14px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;">+ Aggiungi RPC personalizzato</button>
+      </div>
+
+      <!-- WalletConnect -->
+      <div class="card" style="padding:14px;">
+        <div class="sec-hdr">🔗 Gestione Connessioni WalletConnect</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Tutti i wallet esterni connessi tramite WalletConnect. Puoi disconnetterli con un click.</div>
+        <div id="wc-connections-list">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <!-- Notifiche -->
+      <div class="card" style="padding:14px;">
+        <div class="sec-hdr">🔔 Notifiche Push</div>
+        <div style="display:flex;flex-direction:column;gap:8px;" id="notif-settings">
+          <label style="display:flex;align-items:center;justify-content:space-between;font-size:12px;">
+            <span>Transazione confermata</span>
+            <input type="checkbox" id="notif-tx-confirmed" checked onchange="saveSetting('notif_tx_confirmed',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);">
+          </label>
+          <label style="display:flex;align-items:center;justify-content:space-between;font-size:12px;">
+            <span>Transazione fallita</span>
+            <input type="checkbox" id="notif-tx-failed" checked onchange="saveSetting('notif_tx_failed',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);">
+          </label>
+          <label style="display:flex;align-items:center;justify-content:space-between;font-size:12px;">
+            <span>⚠️ Alert Health Factor Aave (liquidazione)</span>
+            <input type="checkbox" id="notif-health-factor" checked onchange="saveSetting('notif_health_factor',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--red);">
+          </label>
+          <label style="display:flex;align-items:center;justify-content:space-between;font-size:12px;">
+            <span>Variazioni di prezzo importanti</span>
+            <input type="checkbox" id="notif-price-alerts" onchange="saveSetting('notif_price_alerts',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);">
+          </label>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <div class="card" style="padding:14px;border-color:rgba(239,68,68,.3);">
+        <div class="sec-hdr" style="color:var(--red);">🚪 Sessione</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button onclick="doLogout()" style="padding:10px 24px;background:linear-gradient(135deg,#ef4444,#dc2626);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">🚪 Logout</button>
+          <button onclick="if(confirm('Disconnettere tutte le sessioni attive?'))logoutAll()" style="padding:10px 24px;background:transparent;border:1px solid var(--red);border-radius:8px;color:var(--red);font-size:13px;font-weight:600;cursor:pointer;">⛔ Disconnetti tutto</button>
+        </div>
+      </div>
+
+    
+      <!-- ════════ FORMSPREE CONFIG ════════ -->
+      <div class="card" style="border:1px solid rgba(99,102,241,.25);">
+        <div class="card-title">📧 Notifiche Feedback (Admin)</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">
+          Configura un endpoint <a href="https://formspree.io" target="_blank" style="color:var(--accent2);">Formspree</a> (gratuito) per ricevere i feedback degli utenti via email.
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input id="setting-formspree" type="text" placeholder="https://formspree.io/f/xxxxxxxx"
+            style="flex:1;min-width:220px;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:8px 10px;color:var(--txt);font-size:12px;"
+            oninput="localStorage.setItem('ctp_formspree_endpoint',this.value)"
+            value="">
+          <button class="btn-sm primary" onclick="
+            const v=document.getElementById('setting-formspree').value.trim();
+            if(!v){showToast('⚠️ Inserisci un endpoint valido','#f59e0b');return;}
+            localStorage.setItem('ctp_formspree_endpoint',v);
+            showToast('✅ Endpoint salvato','#10b981');
+          ">💾 Salva</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px;">
+          ℹ️ Crea un form gratuito su <strong>formspree.io</strong>, copia il link e incollalo qui. Ogni segnalazione beta arriverà direttamente nella tua inbox.
+        </div>
+      </div>
+
+      <!-- ════════ MANUALE UTENTE ════════ -->
+      <div class="card" id="user-manual-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div class="card-title" style="margin:0;">📖 Manuale Utente — CryptoTrade Pro</div>
+          <button onclick="document.getElementById('user-manual-body').style.display=document.getElementById('user-manual-body').style.display==='none'?'block':'none'"
+            style="background:rgba(255,255,255,.05);border:1px solid var(--b);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;">
+            Mostra/Nascondi
+          </button>
+        </div>
+        <div id="user-manual-body" style="display:block;">
+          <div style="display:flex;flex-direction:column;gap:14px;font-size:12px;color:var(--txt);line-height:1.7;">
+
+            <div style="background:rgba(99,102,241,.08);border-left:3px solid var(--accent2);border-radius:0 6px 6px 0;padding:10px 14px;">
+              <strong style="font-size:13px;">🚀 Quick Start</strong><br>
+              Registrati → accedi → seleziona una coppia nella <strong>Watchlist</strong> → analizza il grafico → inserisci un ordine dal pannello <strong>Order Form</strong>.
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:var(--accent2);margin-bottom:6px;">📊 1. Dashboard Trading</div>
+              <div style="padding-left:12px;">
+                • <strong>Grafico:</strong> aggiornato in tempo reale via WebSocket Binance (intervallo configurabile: 1m, 5m, 15m, 1h, 4h, 1D).<br>
+                • <strong>Order Book:</strong> visualizza i migliori 12 livelli di bid/ask in tempo reale.<br>
+                • <strong>Order Form:</strong> supporta ordini Market, Limit e Stop-Limit. Seleziona la leva (1x–100x), inserisci la quantità e conferma.<br>
+                • <strong>Posizioni:</strong> tab inferiore con PnL live calcolato tick-by-tick. Il pulsante "Chiudi" esegue la chiusura al prezzo corrente.<br>
+                • <strong>Ordini Pendenti:</strong> gestisci e cancella gli ordini Limit non ancora eseguiti.<br>
+                • <strong>Storico:</strong> registro completo con volume acquisti/vendite, commissioni e P&L netto.
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#10b981;margin-bottom:6px;">👁 2. Watchlist</div>
+              <div style="padding-left:12px;">
+                • Filtra per categoria (DeFi, Layer1, Layer2, Stablecoin, Meme, Top 20) o usa la ricerca testuale.<br>
+                • Clicca ★ per aggiungere/rimuovere dai <strong>Preferiti</strong>.<br>
+                • I prezzi si aggiornano ogni 10 secondi tramite Binance 24hr ticker batch API.<br>
+                • Clicca su un asset per aprirlo direttamente nel pannello Trading.
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#a855f7;margin-bottom:6px;">🌐 3. DeFi Hub</div>
+              <div style="padding-left:12px;">
+                • <strong>Wallet:</strong> aggiungi indirizzi EVM/Solana per monitorare il saldo on-chain.<br>
+                • <strong>Token:</strong> visualizza il portafoglio token per ogni wallet connesso.<br>
+                • <strong>Grafico DeFi:</strong> powered by GeckoTerminal — analisi pool AMM in tempo reale.<br>
+                • <strong>Notifiche:</strong> configura alert prezzo e movimento whale.
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#f59e0b;margin-bottom:6px;">📈 4. Mercati Azionari (TradFi)</div>
+              <div style="padding-left:12px;">
+                • <strong>Paper Trading</strong> con €100.000 di capitale virtuale iniziale.<br>
+                • Spread markup configurabile (0.1%–0.5%) gestito dal pannello Admin.<br>
+                • Acquista e vendi azioni simulate con grafici TradingView integrati.<br>
+                • Storico ordini completo con calcolo automatico del P&L per posizione.
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#ef4444;margin-bottom:6px;">🔐 5. Sicurezza</div>
+              <div style="padding-left:12px;">
+                • <strong>2FA:</strong> attiva l'autenticazione a due fattori via TOTP (Google Authenticator).<br>
+                • <strong>API Keys:</strong> le chiavi vengono cifrate localmente con AES-256 prima del salvataggio.<br>
+                • <strong>Sessioni:</strong> visualizza e termina le sessioni attive da altri dispositivi.<br>
+                • <strong>PIN:</strong> imposta un PIN di accesso rapido per sessioni brevi.
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#06b6d4;margin-bottom:6px;">⚙️ 6. Impostazioni</div>
+              <div style="padding-left:12px;">
+                • Lingua, valuta di riferimento, slippage e tema (light/dark).<br>
+                • Notifiche push, sound alert e alert prezzo personalizzati.<br>
+                • Connessione exchange tramite API key (Binance, Bybit, OKX, ecc.).<br>
+                • Formspree endpoint per ricevere i feedback beta via email.
+              </div>
+            </div>
+
+            <div>
+              <div style="font-weight:700;color:#6b7280;margin-bottom:6px;">🐛 7. Beta Feedback</div>
+              <div style="padding-left:12px;">
+                • Clicca <strong>"🐛 Beta Feedback"</strong> nella barra di navigazione per inviare segnalazioni.<br>
+                • Classifica il tipo (Bug, Feature Request, Miglioramento, Performance) e la severità.<br>
+                • Il feedback viene salvato localmente e (se configurato) inviato via email all'admin.
+              </div>
+            </div>
+
+            <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);">
+              🔒 <strong>Privacy:</strong> tutti i dati (wallet, API keys, preferenze) sono archiviati <em>esclusivamente</em> nel tuo browser (localStorage). Nessun dato viene trasmesso a server terzi senza esplicita autorizzazione.
+            </div>
+          </div>
+        </div>
+      </div>
+</div>
+  </div>
 </div><!-- /app -->
 
 <!-- ══ MODAL: PAIR PICKER ══ -->
@@ -2862,80 +3319,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-  <!-- ══════════════════════════════════════════════════════════════
-       PAGE: DEFI HUB
-  ══════════════════════════════════════════════════════════════ -->
-  <div id="page-defi" class="page" style="overflow:auto;">
-    <div style="padding:12px;display:flex;flex-direction:column;gap:12px;">
-      <!-- Header DeFi -->
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div>
-          <div style="font-size:16px;font-weight:800;background:linear-gradient(135deg,#6366f1,#a855f7,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">🌐 DeFi Hub</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Gestisci i tuoi wallet DeFi e token on-chain</div>
-        </div>
-        <button onclick="openAddWalletModal()" style="padding:7px 16px;background:linear-gradient(135deg,#6366f1,#a855f7);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">+ Aggiungi Wallet</button>
-      </div>
-
-      <!-- Multi-Wallet Cards -->
-      <div id="defi-wallets-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;"></div>
-
-      <!-- Portfolio Pie Chart + Token List -->
-      <div style="display:grid;grid-template-columns:300px 1fr;gap:12px;flex-wrap:wrap;">
-        <div class="card" style="padding:14px;">
-          <div class="card-hdr" style="margin:-14px -14px 12px -14px;"><span class="card-title">🥧 Portfolio Distribution</span></div>
-          <canvas id="defi-pie-chart" width="260" height="260" style="display:block;margin:0 auto;"></canvas>
-          <div id="defi-pie-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:4px;"></div>
-        </div>
-        <div class="card" style="padding:14px;">
-          <div class="card-hdr" style="margin:-14px -14px 12px -14px;">
-            <span class="card-title">💎 Token nel Portfolio</span>
-            <button onclick="refreshDefiTokens()" style="font-size:10px;padding:3px 8px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:5px;color:var(--accent);cursor:pointer;">🔄 Aggiorna</button>
-          </div>
-          <div id="defi-token-list" style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;"></div>
-        </div>
-      </div>
-
-      <!-- Grafico Prezzo Token DeFi -->
-      <div class="card" style="padding:14px;">
-        <div class="card-hdr" style="margin:-14px -14px 12px -14px;">
-          <span class="card-title">📊 Grafico Prezzi Token DeFi</span>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <select id="defi-token-select" onchange="loadDefiChart()" style="background:var(--bg3);border:1px solid var(--b);border-radius:5px;color:var(--txt);font-size:11px;padding:3px 8px;">
-              <option value="uniswap">UNI/USDT</option>
-              <option value="aave">AAVE/USDT</option>
-              <option value="compound-governance-token">COMP/USDT</option>
-              <option value="curve-dao-token">CRV/USDT</option>
-              <option value="maker">MKR/USDT</option>
-              <option value="chainlink">LINK/USDT</option>
-              <option value="the-graph">GRT/USDT</option>
-            </select>
-            <select id="defi-chart-days" onchange="loadDefiChart()" style="background:var(--bg3);border:1px solid var(--b);border-radius:5px;color:var(--txt);font-size:11px;padding:3px 8px;">
-              <option value="1">1G</option>
-              <option value="7" selected>7G</option>
-              <option value="30">30G</option>
-              <option value="90">90G</option>
-            </select>
-          </div>
-        </div>
-        <div id="defi-chart-container" style="height:280px;position:relative;"></div>
-      </div>
-
-      <!-- Notifiche Blockchain -->
-      <div class="card" style="padding:14px;">
-        <div class="card-hdr" style="margin:-14px -14px 12px -14px;">
-          <span class="card-title">🔔 Notifiche Blockchain</span>
-          <span id="notif-badge" style="background:rgba(239,68,68,.15);color:var(--red);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;display:none;">0 nuove</span>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-          <button onclick="testNotif('pending')" style="padding:5px 12px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:6px;color:var(--yellow);font-size:11px;cursor:pointer;">⏳ Test Pending</button>
-          <button onclick="testNotif('success')" style="padding:5px 12px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:6px;color:var(--green);font-size:11px;cursor:pointer;">✅ Test Success</button>
-          <button onclick="testNotif('failed')" style="padding:5px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:var(--red);font-size:11px;cursor:pointer;">❌ Test Failed</button>
-          <button onclick="testNotif('health')" style="padding:5px 12px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:6px;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;animation:blink 1.2s infinite;">⚠️ Test Health Factor</button>
-        </div>
-        <div id="notif-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;"></div>
-      </div>
-    </div>
-  </div>
 
   <!-- Modal Aggiungi Wallet -->
   <div id="modal-add-wallet" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;">
@@ -2968,387 +3351,7 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       PAGE: MERCATI AZIONARI (TRADFI)
-  ══════════════════════════════════════════════════════════════ -->
-  <div id="page-stocks" class="page" style="overflow:auto;">
-    <div style="padding:12px;display:flex;flex-direction:column;gap:12px;">
 
-      <!-- Header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div>
-          <div style="font-size:16px;font-weight:800;background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">📈 Mercati Azionari</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Paper Trading — $100,000 virtuali • Dati reali di mercato</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:6px 14px;text-align:center;">
-            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;">Saldo Virtuale</div>
-            <div id="stocks-balance" style="font-size:14px;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace;">$100,000.00</div>
-          </div>
-          <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:6px 14px;text-align:center;">
-            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;">P&L Portfolio</div>
-            <div id="stocks-pnl" style="font-size:14px;font-weight:700;color:var(--yellow);font-family:'JetBrains Mono',monospace;">$0.00</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Paywall Banner (per non-premium) -->
-      <div id="stocks-paywall" style="display:none;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(168,85,247,.15));border:1px solid rgba(99,102,241,.4);border-radius:12px;padding:20px;text-align:center;">
-        <div style="font-size:24px;margin-bottom:8px;">🔒</div>
-        <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Funzionalità Premium</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Accedi ai mercati azionari in tempo reale e invia ordini con il piano Premium</div>
-        <button onclick="showToast('Funzionalità disponibile nella versione completa!','#6366f1')" style="padding:10px 28px;background:linear-gradient(135deg,#6366f1,#a855f7);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">⭐ Passa a Premium</button>
-      </div>
-
-      <div id="stocks-content">
-        <!-- Search Bar -->
-        <div class="card" style="padding:12px;">
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <input id="stocks-search" type="text" placeholder="Cerca ticker: AAPL, TSLA, NVDA, AMZN..." 
-              style="flex:1;min-width:200px;background:var(--bg1);border:1px solid var(--b);border-radius:8px;padding:10px 14px;color:#fff;font-size:12px;outline:none;font-family:'JetBrains Mono',monospace;"
-              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--b)'"
-              onkeypress="if(event.key==='Enter')searchStock()"/>
-            <button onclick="searchStock()" style="padding:10px 20px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">🔍 Cerca</button>
-            <div style="display:flex;gap:5px;flex-wrap:wrap;">
-              <button onclick="loadStockQuick('AAPL')" class="nav-btn">AAPL</button>
-              <button onclick="loadStockQuick('TSLA')" class="nav-btn">TSLA</button>
-              <button onclick="loadStockQuick('NVDA')" class="nav-btn">NVDA</button>
-              <button onclick="loadStockQuick('AMZN')" class="nav-btn">AMZN</button>
-              <button onclick="loadStockQuick('MSFT')" class="nav-btn">MSFT</button>
-              <button onclick="loadStockQuick('SPY')" class="nav-btn">S&P500</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Stock Info + Chart + Order Form -->
-        <div style="display:grid;grid-template-columns:1fr 260px;gap:12px;margin-top:12px;">
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <!-- Stock Info Bar -->
-            <div id="stock-info-bar" class="card" style="padding:12px;display:none;">
-              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                <div style="font-size:20px;font-weight:800;" id="stock-symbol-display">—</div>
-                <div>
-                  <div style="font-size:11px;color:var(--muted);" id="stock-name-display">—</div>
-                  <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
-                    <span style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;" id="stock-price-display">$—</span>
-                    <span style="font-size:12px;font-family:'JetBrains Mono',monospace;" id="stock-change-display">—</span>
-                  </div>
-                </div>
-                <div style="margin-left:auto;display:flex;gap:16px;flex-wrap:wrap;">
-                  <div><div style="font-size:9px;color:var(--muted);">OPEN</div><div style="font-size:11px;font-family:'JetBrains Mono',monospace;" id="stock-open">—</div></div>
-                  <div><div style="font-size:9px;color:var(--muted);">HIGH</div><div style="font-size:11px;font-family:'JetBrains Mono',monospace;" id="stock-high">—</div></div>
-                  <div><div style="font-size:9px;color:var(--muted);">LOW</div><div style="font-size:11px;font-family:'JetBrains Mono',monospace;" id="stock-low">—</div></div>
-                  <div><div style="font-size:9px;color:var(--muted);">VOLUME</div><div style="font-size:11px;font-family:'JetBrains Mono',monospace;" id="stock-volume">—</div></div>
-                  <div><div style="font-size:9px;color:var(--muted);">MKT CAP</div><div style="font-size:11px;font-family:'JetBrains Mono',monospace;" id="stock-mktcap">—</div></div>
-                </div>
-              </div>
-            </div>
-            <!-- TradingView Chart -->
-            <div class="card" style="padding:0;overflow:hidden;">
-              <div id="stocks-tv-container" style="height:380px;">
-                <div id="stocks-chart-placeholder" style="height:380px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--muted);">
-                  <div style="font-size:32px;">📊</div>
-                  <div style="font-size:13px;">Cerca un titolo per visualizzare il grafico</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Order Form -->
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <div class="card" style="padding:14px;">
-              <div style="font-size:12px;font-weight:700;margin-bottom:10px;">📋 Piazza Ordine</div>
-              <div style="display:flex;gap:3px;background:rgba(255,255,255,.04);border-radius:7px;padding:2px;margin-bottom:10px;">
-                <button class="tab-btn active" id="sord-market-btn" onclick="setStockOrderType('market')">Market</button>
-                <button class="tab-btn" id="sord-limit-btn" onclick="setStockOrderType('limit')">Limit</button>
-              </div>
-              <!-- Tipo investimento -->
-              <div style="margin-bottom:8px;">
-                <div class="inp-lbl">Tipo investimento</div>
-                <select id="stock-invest-type" onchange="toggleStockInvestType()" style="width:100%;background:rgba(255,255,255,.04);color:#fff;border:1px solid var(--b);border-radius:6px;padding:5px 8px;font-size:12px;">
-                  <option value="shares">Numero azioni</option>
-                  <option value="amount">Importo fisso (€/$)</option>
-                </select>
-              </div>
-              <div id="stock-qty-row" style="margin-bottom:8px;">
-                <div class="inp-lbl">Quantità azioni</div>
-                <input id="stock-qty" type="number" step="0.001" min="0" class="inp" placeholder="0.00" oninput="calcStockOrder()"/>
-              </div>
-              <div id="stock-amount-row" style="margin-bottom:8px;display:none;">
-                <div class="inp-lbl">Importo ($)</div>
-                <input id="stock-amount" type="number" step="1" min="0" class="inp" placeholder="es. 100" oninput="calcStockOrder()"/>
-              </div>
-              <div id="stock-limit-price-row" style="margin-bottom:8px;display:none;">
-                <div class="inp-lbl">Prezzo Limite ($)</div>
-                <input id="stock-limit-price" type="number" step="0.01" min="0" class="inp" placeholder="0.00"/>
-              </div>
-              <!-- Riepilogo -->
-              <div style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.18);border-radius:6px;padding:8px;margin-bottom:10px;font-size:11px;">
-                <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:var(--muted);">Prezzo</span><span id="sord-price" style="font-family:'JetBrains Mono',monospace;">$—</span></div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:var(--muted);">Quantità</span><span id="sord-qty-display" style="font-family:'JetBrains Mono',monospace;">—</span></div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:var(--muted);">Spread (0.1%)</span><span id="sord-spread" style="font-family:'JetBrains Mono',monospace;color:var(--yellow);">$0.00</span></div>
-                <div style="display:flex;justify-content:space-between;font-weight:700;"><span>Totale</span><span id="sord-total" style="font-family:'JetBrains Mono',monospace;color:var(--accent);">$0.00</span></div>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-                <button class="btn-buy" onclick="placeStockOrder('buy')">▲ COMPRA</button>
-                <button class="btn-sell" onclick="placeStockOrder('sell')">▼ VENDI</button>
-              </div>
-            </div>
-
-            <!-- Portfolio Azionario -->
-            <div class="card" style="padding:14px;">
-              <div style="font-size:11px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">📂 Le Mie Azioni</div>
-              <div id="stocks-portfolio-list" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto;">
-                <div style="text-align:center;color:var(--muted);font-size:11px;padding:16px;">Nessuna posizione</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Storico Ordini Azionari -->
-        <div class="card" style="margin-top:12px;padding:14px;">
-          <div style="font-size:11px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">📜 Storico Ordini</div>
-          <div style="overflow:auto;max-height:200px;">
-            <table class="dt" id="stocks-history-table">
-              <thead><tr>
-                <th>Data/Ora</th><th>Ticker</th><th>Tipo</th><th>Qta</th><th>Prezzo</th><th>Spread</th><th>Totale</th><th>P&L</th>
-              </tr></thead>
-              <tbody id="stocks-history-body"><tr><td colspan="8" class="empty">Nessun ordine</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════════════════════════
-       PAGE: IMPOSTAZIONI
-  ══════════════════════════════════════════════════════════════ -->
-  <div id="page-settings" class="page" style="overflow:auto;">
-    <div style="padding:16px;max-width:860px;display:flex;flex-direction:column;gap:16px;">
-      
-      <div style="font-size:16px;font-weight:800;margin-bottom:4px;">⚙️ Impostazioni</div>
-
-      <!-- Localizzazione -->
-      <div class="card" style="padding:14px;">
-        <div class="sec-hdr">🌍 Localizzazione</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div>
-            <div class="inp-lbl">Lingua Interfaccia</div>
-            <select id="setting-lang" onchange="saveSetting('lang',this.value)" style="width:100%;background:rgba(255,255,255,.04);color:#fff;border:1px solid var(--b);border-radius:6px;padding:8px 10px;font-size:12px;">
-              <option value="it">🇮🇹 Italiano</option>
-              <option value="en">🇬🇧 English</option>
-              <option value="es">🇪🇸 Español</option>
-              <option value="fr">🇫🇷 Français</option>
-              <option value="de">🇩🇪 Deutsch</option>
-            </select>
-          </div>
-          <div>
-            <div class="inp-lbl">Valuta di Riferimento</div>
-            <select id="setting-currency" onchange="saveSetting('currency',this.value)" style="width:100%;background:rgba(255,255,255,.04);color:#fff;border:1px solid var(--b);border-radius:6px;padding:8px 10px;font-size:12px;">
-              <option value="USD">🇺🇸 USD — Dollaro</option>
-              <option value="EUR">🇪🇺 EUR — Euro</option>
-              <option value="GBP">🇬🇧 GBP — Sterlina</option>
-              <option value="JPY">🇯🇵 JPY — Yen</option>
-              <option value="CHF">🇨🇭 CHF — Franco Svizzero</option>
-              <option value="BTC">₿ BTC — Bitcoin</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Slippage Tolerance -->
-      <div class="card" style="padding:14px;">
-        <div class="sec-hdr">⚖️ Slippage Tolerance (Swap DeFi)</div>
-        <div style="margin-bottom:10px;font-size:11px;color:var(--muted);line-height:1.6;">Percentuale massima di variazione di prezzo accettabile prima che la transazione venga annullata automaticamente.</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-          <button onclick="setSlippage(0.1)" id="slip-01" class="pct-btn">0.1%</button>
-          <button onclick="setSlippage(0.5)" id="slip-05" class="pct-btn active">0.5%</button>
-          <button onclick="setSlippage(1.0)" id="slip-10" class="pct-btn">1.0%</button>
-          <button onclick="setSlippage(2.0)" id="slip-20" class="pct-btn">2.0%</button>
-          <button onclick="setSlippage(3.0)" id="slip-30" class="pct-btn">3.0%</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:11px;color:var(--muted);">Custom:</span>
-          <input id="slip-custom" type="number" step="0.1" min="0.01" max="50" class="inp" style="width:100px;" placeholder="es. 1.5"
-            onchange="setSlippage(parseFloat(this.value))"/>
-          <span style="font-size:11px;color:var(--muted);">%</span>
-          <span style="font-size:12px;color:var(--yellow);font-weight:700;" id="slip-display">Attuale: 0.5%</span>
-        </div>
-      </div>
-
-      <!-- Gestione RPC -->
-      <div class="card" style="padding:14px;">
-        <div class="sec-hdr">🔧 Gestione RPC (Advanced)</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6;">Personalizza i nodi RPC usati per connettersi alle blockchain. Utile per migliorare velocità o usare nodi privati.</div>
-        <div style="display:flex;flex-direction:column;gap:10px;" id="rpc-list">
-          <!-- populated by JS -->
-        </div>
-        <button onclick="addRpcRow()" style="margin-top:10px;padding:6px 14px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;">+ Aggiungi RPC personalizzato</button>
-      </div>
-
-      <!-- WalletConnect -->
-      <div class="card" style="padding:14px;">
-        <div class="sec-hdr">🔗 Gestione Connessioni WalletConnect</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Tutti i wallet esterni connessi tramite WalletConnect. Puoi disconnetterli con un click.</div>
-        <div id="wc-connections-list">
-          <!-- populated by JS -->
-        </div>
-      </div>
-
-      <!-- Notifiche -->
-      <div class="card" style="padding:14px;">
-        <div class="sec-hdr">🔔 Notifiche Push</div>
-        <div style="display:flex;flex-direction:column;gap:8px;" id="notif-settings">
-          <label style="display:flex;align-items:center;justify-content:space-between;font-size:12px;">
-            <span>Transazione confermata</span>
-            <input type="checkbox" id="notif-tx-confirmed" checked onchange="saveSetting('notif_tx_confirmed',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);">
-          </label>
-          <label style="display:flex;align-items:center;justify-content:space-between;font-size:12px;">
-            <span>Transazione fallita</span>
-            <input type="checkbox" id="notif-tx-failed" checked onchange="saveSetting('notif_tx_failed',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);">
-          </label>
-          <label style="display:flex;align-items:center;justify-content:space-between;font-size:12px;">
-            <span>⚠️ Alert Health Factor Aave (liquidazione)</span>
-            <input type="checkbox" id="notif-health-factor" checked onchange="saveSetting('notif_health_factor',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--red);">
-          </label>
-          <label style="display:flex;align-items:center;justify-content:space-between;font-size:12px;">
-            <span>Variazioni di prezzo importanti</span>
-            <input type="checkbox" id="notif-price-alerts" onchange="saveSetting('notif_price_alerts',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);">
-          </label>
-        </div>
-      </div>
-
-      <!-- Logout -->
-      <div class="card" style="padding:14px;border-color:rgba(239,68,68,.3);">
-        <div class="sec-hdr" style="color:var(--red);">🚪 Sessione</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button onclick="doLogout()" style="padding:10px 24px;background:linear-gradient(135deg,#ef4444,#dc2626);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">🚪 Logout</button>
-          <button onclick="if(confirm('Disconnettere tutte le sessioni attive?'))logoutAll()" style="padding:10px 24px;background:transparent;border:1px solid var(--red);border-radius:8px;color:var(--red);font-size:13px;font-weight:600;cursor:pointer;">⛔ Disconnetti tutto</button>
-        </div>
-      </div>
-
-    
-      <!-- ════════ FORMSPREE CONFIG ════════ -->
-      <div class="card" style="border:1px solid rgba(99,102,241,.25);">
-        <div class="card-title">📧 Notifiche Feedback (Admin)</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">
-          Configura un endpoint <a href="https://formspree.io" target="_blank" style="color:var(--accent2);">Formspree</a> (gratuito) per ricevere i feedback degli utenti via email.
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <input id="setting-formspree" type="text" placeholder="https://formspree.io/f/xxxxxxxx"
-            style="flex:1;min-width:220px;background:var(--bg2);border:1px solid var(--b);border-radius:6px;padding:8px 10px;color:var(--txt);font-size:12px;"
-            oninput="localStorage.setItem('ctp_formspree_endpoint',this.value)"
-            value="">
-          <button class="btn-sm primary" onclick="
-            const v=document.getElementById('setting-formspree').value.trim();
-            if(!v){showToast('⚠️ Inserisci un endpoint valido','#f59e0b');return;}
-            localStorage.setItem('ctp_formspree_endpoint',v);
-            showToast('✅ Endpoint salvato','#10b981');
-          ">💾 Salva</button>
-        </div>
-        <div style="font-size:10px;color:var(--muted);margin-top:6px;">
-          ℹ️ Crea un form gratuito su <strong>formspree.io</strong>, copia il link e incollalo qui. Ogni segnalazione beta arriverà direttamente nella tua inbox.
-        </div>
-      </div>
-
-      <!-- ════════ MANUALE UTENTE ════════ -->
-      <div class="card" id="user-manual-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div class="card-title" style="margin:0;">📖 Manuale Utente — CryptoTrade Pro</div>
-          <button onclick="document.getElementById('user-manual-body').style.display=document.getElementById('user-manual-body').style.display==='none'?'block':'none'"
-            style="background:rgba(255,255,255,.05);border:1px solid var(--b);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;">
-            Mostra/Nascondi
-          </button>
-        </div>
-        <div id="user-manual-body" style="display:block;">
-          <div style="display:flex;flex-direction:column;gap:14px;font-size:12px;color:var(--txt);line-height:1.7;">
-
-            <div style="background:rgba(99,102,241,.08);border-left:3px solid var(--accent2);border-radius:0 6px 6px 0;padding:10px 14px;">
-              <strong style="font-size:13px;">🚀 Quick Start</strong><br>
-              Registrati → accedi → seleziona una coppia nella <strong>Watchlist</strong> → analizza il grafico → inserisci un ordine dal pannello <strong>Order Form</strong>.
-            </div>
-
-            <div>
-              <div style="font-weight:700;color:var(--accent2);margin-bottom:6px;">📊 1. Dashboard Trading</div>
-              <div style="padding-left:12px;">
-                • <strong>Grafico:</strong> aggiornato in tempo reale via WebSocket Binance (intervallo configurabile: 1m, 5m, 15m, 1h, 4h, 1D).<br>
-                • <strong>Order Book:</strong> visualizza i migliori 12 livelli di bid/ask in tempo reale.<br>
-                • <strong>Order Form:</strong> supporta ordini Market, Limit e Stop-Limit. Seleziona la leva (1x–100x), inserisci la quantità e conferma.<br>
-                • <strong>Posizioni:</strong> tab inferiore con PnL live calcolato tick-by-tick. Il pulsante "Chiudi" esegue la chiusura al prezzo corrente.<br>
-                • <strong>Ordini Pendenti:</strong> gestisci e cancella gli ordini Limit non ancora eseguiti.<br>
-                • <strong>Storico:</strong> registro completo con volume acquisti/vendite, commissioni e P&L netto.
-              </div>
-            </div>
-
-            <div>
-              <div style="font-weight:700;color:#10b981;margin-bottom:6px;">👁 2. Watchlist</div>
-              <div style="padding-left:12px;">
-                • Filtra per categoria (DeFi, Layer1, Layer2, Stablecoin, Meme, Top 20) o usa la ricerca testuale.<br>
-                • Clicca ★ per aggiungere/rimuovere dai <strong>Preferiti</strong>.<br>
-                • I prezzi si aggiornano ogni 10 secondi tramite Binance 24hr ticker batch API.<br>
-                • Clicca su un asset per aprirlo direttamente nel pannello Trading.
-              </div>
-            </div>
-
-            <div>
-              <div style="font-weight:700;color:#a855f7;margin-bottom:6px;">🌐 3. DeFi Hub</div>
-              <div style="padding-left:12px;">
-                • <strong>Wallet:</strong> aggiungi indirizzi EVM/Solana per monitorare il saldo on-chain.<br>
-                • <strong>Token:</strong> visualizza il portafoglio token per ogni wallet connesso.<br>
-                • <strong>Grafico DeFi:</strong> powered by GeckoTerminal — analisi pool AMM in tempo reale.<br>
-                • <strong>Notifiche:</strong> configura alert prezzo e movimento whale.
-              </div>
-            </div>
-
-            <div>
-              <div style="font-weight:700;color:#f59e0b;margin-bottom:6px;">📈 4. Mercati Azionari (TradFi)</div>
-              <div style="padding-left:12px;">
-                • <strong>Paper Trading</strong> con €100.000 di capitale virtuale iniziale.<br>
-                • Spread markup configurabile (0.1%–0.5%) gestito dal pannello Admin.<br>
-                • Acquista e vendi azioni simulate con grafici TradingView integrati.<br>
-                • Storico ordini completo con calcolo automatico del P&L per posizione.
-              </div>
-            </div>
-
-            <div>
-              <div style="font-weight:700;color:#ef4444;margin-bottom:6px;">🔐 5. Sicurezza</div>
-              <div style="padding-left:12px;">
-                • <strong>2FA:</strong> attiva l'autenticazione a due fattori via TOTP (Google Authenticator).<br>
-                • <strong>API Keys:</strong> le chiavi vengono cifrate localmente con AES-256 prima del salvataggio.<br>
-                • <strong>Sessioni:</strong> visualizza e termina le sessioni attive da altri dispositivi.<br>
-                • <strong>PIN:</strong> imposta un PIN di accesso rapido per sessioni brevi.
-              </div>
-            </div>
-
-            <div>
-              <div style="font-weight:700;color:#06b6d4;margin-bottom:6px;">⚙️ 6. Impostazioni</div>
-              <div style="padding-left:12px;">
-                • Lingua, valuta di riferimento, slippage e tema (light/dark).<br>
-                • Notifiche push, sound alert e alert prezzo personalizzati.<br>
-                • Connessione exchange tramite API key (Binance, Bybit, OKX, ecc.).<br>
-                • Formspree endpoint per ricevere i feedback beta via email.
-              </div>
-            </div>
-
-            <div>
-              <div style="font-weight:700;color:#6b7280;margin-bottom:6px;">🐛 7. Beta Feedback</div>
-              <div style="padding-left:12px;">
-                • Clicca <strong>"🐛 Beta Feedback"</strong> nella barra di navigazione per inviare segnalazioni.<br>
-                • Classifica il tipo (Bug, Feature Request, Miglioramento, Performance) e la severità.<br>
-                • Il feedback viene salvato localmente e (se configurato) inviato via email all'admin.
-              </div>
-            </div>
-
-            <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);">
-              🔒 <strong>Privacy:</strong> tutti i dati (wallet, API keys, preferenze) sono archiviati <em>esclusivamente</em> nel tuo browser (localStorage). Nessun dato viene trasmesso a server terzi senza esplicita autorizzazione.
-            </div>
-          </div>
-        </div>
-      </div>
-</div>
-  </div>
 
 
 <script>

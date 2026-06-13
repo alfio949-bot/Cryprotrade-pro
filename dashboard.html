@@ -1287,10 +1287,32 @@ const S = {
 //  NAVIGATION
 // ══════════════════════════════════════
 function showPage(name, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const pg = document.getElementById('page-' + name);
-  if (pg) pg.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = 'none';
+  });
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const pg = document.getElementById('page-' + name);
+  if (pg) {
+    pg.classList.add('active');
+    pg.style.display = 'flex';
+    pg.style.flexDirection = 'column';
+    pg.style.flex = '1';
+    pg.style.minHeight = '0';
+    const scrollPages = ['defi','stocks','settings','watchlist','exchange','security'];
+    if (scrollPages.includes(name)) {
+      pg.style.overflowY = 'auto';
+      pg.style.overflowX = 'hidden';
+    }
+    if (name === 'dash' && typeof chart !== 'undefined' && chart) {
+      requestAnimationFrame(function(){
+        var c = document.getElementById('tv-chart');
+        if(c && c.clientWidth > 0 && c.clientHeight > 0) {
+          try { chart.applyOptions({width:c.clientWidth, height:c.clientHeight}); chart.timeScale().fitContent(); } catch(_){}
+        }
+      });
+    }
+  }
   if (btn) btn.classList.add('active');
 }
 
@@ -2372,7 +2394,7 @@ function showToast(msg,color='#6366f1'){
 //  NAVIGAZIONE LOGIN / REGISTER
 // ══════════════════════════════════════
 function goToAdmin() {
-  window.location.href = 'crypto_admin_v3_fixed.html';
+  window.location.href = 'admin.html';
 }
 function goToLogin() {
   window.location.href = 'register.html?mode=login';

@@ -64,21 +64,28 @@ Deno.serve(async (req: Request) => {
     if (!insertRes.ok) throw new Error((inserted as unknown as {message: string}).message || "Errore DB");
     const newUser = Array.isArray(inserted) ? inserted[0] : inserted;
 
+    // Send email via Brevo
+    const emailPayload = {
+      sender: { name: "CryptoTrade Pro", email: "criptotradepro@gmail.com" },
+      to: [{ email: emailNorm, name: full_name || emailNorm.split("@")[0] }],
+      subject: "La tua Master Passkey - CryptoTrade Pro",
+      htmlContent: `<h2 style="color:#6366f1">CryptoTrade Pro</h2><p>Ciao ${full_name || emailNorm.split("@")[0]},</p><p>Registrazione completata! La tua passkey:</p><h3 style="font-family:monospace;letter-spacing:4px;color:#a78bfa;background:#1e1b4b;padding:16px;border-radius:8px">${passkey}</h3><p style="color:#f59e0b">Conservala in un posto sicuro!</p>`,
+    };
+
     const emailRes = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: { "api-key": BREVO_API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sender: { name: "CryptoTrade Pro", email: "criptotradepro@gmail.com" },
-        to: [{ email: emailNorm, name: full_name || emailNorm.split("@")[0] }],
-        subject: "La tua Master Passkey - CryptoTrade Pro",
-        htmlContent: `<h2 style="color:#6366f1">CryptoTrade Pro</h2><p>Ciao ${full_name || emailNorm.split("@")[0]},</p><p>Registrazione completata! La tua passkey:</p><h3 style="font-family:monospace;letter-spacing:4px;color:#a78bfa;background:#1e1b4b;padding:16px;border-radius:8px">${passkey}</h3><p style="color:#f59e0b">Conservala in un posto sicuro!</p>`,
-      }),
+      body: JSON.stringify(emailPayload),
     });
+
+    const emailBody = await emailRes.json();
 
     return new Response(JSON.stringify({
       success: true,
       user: { id: newUser.id, email: newUser.email, full_name: newUser.full_name },
       email_sent: emailRes.ok,
+      email_status: emailRes.status,
+      email_response: emailBody,
     }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (err) {

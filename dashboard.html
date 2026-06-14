@@ -1461,6 +1461,54 @@ var AG_KEY = (function() {
     setTimeout(function() {
       var ok = agTimingSafeCompare(val, AG_KEY);
 
+      // Se la chiave locale non matcha ma è nel formato CTP-, prova via API
+      if (!ok && val.match(/^CTP-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+        var sess = null;
+        try { sess = JSON.parse(localStorage.getItem('ct_session') || 'null'); } catch(e) {}
+        var email = (sess && sess.email) ? sess.email : null;
+        if (email) {
+          var supabaseUrl = "https://mezuesxglgdjpeaiicyb.supabase.co";
+          var supabaseAnon = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lenVlc3hnbGdkanBlYWlpY3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MDA5NDQsImV4cCI6MjA5Njk3Njk0NH0.2b06qN6PuIB80_0j8UV5-eRlH4hpHnN8epC1V--2LZw";
+          fetch(supabaseUrl + "/functions/v1/verify-passkey", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "apikey": supabaseAnon },
+            body: JSON.stringify({ email: email, passkey: val })
+          }).then(function(r){ return r.json(); }).then(function(data){
+            if (data.success) {
+              localStorage.setItem('stored_passkey', val);
+              agGrantAccess();
+            } else {
+              agState.tries++;
+              agSaveRL();
+              btn.disabled = false;
+              btn.classList.remove('ag-loading');
+              btn.textContent = '\uD83D\uDD13 Sblocca Accesso';
+              inp.value = '';
+              inp.classList.add('ag-error');
+              setTimeout(function(){ inp.classList.remove('ag-error'); }, 600);
+              var remaining = AG_MAX_TRIES - agState.tries;
+              if (remaining <= 0) {
+                var lockSeconds = AG_BASE_LOCK * Math.pow(2, Math.floor(agState.tries / AG_MAX_TRIES) - 1);
+                lockSeconds = Math.min(lockSeconds, 3600);
+                var lockUntil = Date.now() + lockSeconds * 1000;
+                agState.locked = true;
+                agState.lockUntil = lockUntil;
+                agSaveRL();
+                agShowLockout(Math.ceil(lockSeconds));
+              } else {
+                agShowError('\u274C Chiave non valida. Tentativi rimasti: ' + remaining);
+              }
+            }
+          }).catch(function(){
+            btn.disabled = false;
+            btn.classList.remove('ag-loading');
+            btn.textContent = '\uD83D\uDD13 Sblocca Accesso';
+            agShowError('\u26A0\uFE0F Errore di connessione. Riprova.');
+          });
+          return; // Aspetta la risposta asincrona
+        }
+      }
+
       if (ok) {
         agGrantAccess();
       } else {

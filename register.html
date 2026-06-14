@@ -125,6 +125,8 @@ async function sendPasskeyEmail(toEmail, toName, passkey) {
     const res = await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_name:       toName || toEmail.split('@')[0],
       to_email:      toEmail,
+      email:         toEmail,
+      name:          toName || toEmail.split('@')[0],
       passkey:       passkey,
       platform_name: 'CryptoTrade Pro | Institutional Terminal'
     });

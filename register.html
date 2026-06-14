@@ -6,8 +6,6 @@
   <title>CryptoTrade Pro — Accesso</title>
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
-  <!-- EmailJS SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
     * { font-family: 'Inter', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,62 +17,21 @@
     .container { background: rgba(255,255,255,0.04); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 30px; width: 100%; max-width: 420px; }
     .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; margin-top: 12px; font-size: 14px; }
     .btn-primary { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; }
-    .btn-secondary { background: transparent; color: #9ca3af; }
+    .btn-secondary { background: transparent; color: #9ca3af; border: 1px solid rgba(255,255,255,0.1); }
     .title { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #6366f1, #a855f7, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
     .subtitle { font-size: 14px; color: #9ca3af; margin-bottom: 24px; }
     .error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2); color: #f87171; padding: 10px 12px; border-radius: 8px; font-size: 12px; margin: 10px 0; }
     .success-box { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; padding: 12px; border-radius: 8px; font-size: 13px; margin: 10px 0; }
-    .flex { display: flex; gap: 12px; }
     label { font-size: 12px; color: #9ca3af; display: block; margin-top: 12px; margin-bottom: 4px; }
-    /* Passkey box */
-    .passkey-box {
-      background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15));
-      border: 2px solid rgba(99,102,241,0.5);
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      margin: 20px 0;
-    }
-    .passkey-code {
-      font-family: 'Courier New', monospace;
-      font-size: 26px;
-      font-weight: 900;
-      letter-spacing: 4px;
-      color: #a78bfa;
-      background: rgba(0,0,0,0.3);
-      padding: 12px 20px;
-      border-radius: 8px;
-      display: inline-block;
-      margin: 10px 0;
-      border: 1px solid rgba(99,102,241,0.3);
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+    .passkey-box { background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15)); border: 2px solid rgba(99,102,241,0.5); border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0; }
+    .passkey-code { font-family: 'Courier New', monospace; font-size: 26px; font-weight: 900; letter-spacing: 4px; color: #a78bfa; background: rgba(0,0,0,0.3); padding: 12px 20px; border-radius: 8px; display: inline-block; margin: 10px 0; border: 1px solid rgba(99,102,241,0.3); cursor: pointer; transition: background 0.2s; }
     .passkey-code:hover { background: rgba(99,102,241,0.2); }
-    .copy-hint { font-size: 11px; color: #6b7280; margin-top: 4px; }
-    .warning-box {
-      background: rgba(245,158,11,0.1);
-      border: 1px solid rgba(245,158,11,0.3);
-      color: #f59e0b;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      margin: 12px 0;
-      line-height: 1.5;
-    }
-    .step-indicator {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-    .step-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: rgba(99,102,241,0.3);
-    }
+    .warning-box { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; padding: 12px; border-radius: 8px; font-size: 12px; margin: 12px 0; line-height: 1.5; }
+    .step-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .step-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(99,102,241,0.3); }
     .step-dot.active { background: #6366f1; }
     .step-dot.done { background: #22c55e; }
+    .badge { display: inline-block; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; font-size: 10px; padding: 2px 8px; border-radius: 20px; margin-left: 8px; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -82,418 +39,233 @@
 <script>
 const { useState, useEffect } = React;
 
-const DASHBOARD_URL = "dashboard.html";
+// ── CONFIG BACKEND ────────────────────────────────────────────────────────
+const SUPABASE_URL    = "https://mezuesxglgdjpeaiicyb.supabase.co";
+const SUPABASE_ANON   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lenVlc3hnbGdkanBlYWlpY3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MDA5NDQsImV4cCI6MjA5Njk3Njk0NH0.2b06qN6PuIB80_0j8UV5-eRlH4hpHnN8epC1V--2LZw";
+const DASHBOARD_URL   = "dashboard.html";
+
 const store = {
-  get: (k, d = null) => {
-    try { return JSON.parse(localStorage.getItem(k) || "null") ?? d; } catch { return d; }
-  },
+  get: (k, d=null) => { try { return JSON.parse(localStorage.getItem(k)||"null")??d; } catch { return d; } },
   set: (k, v) => localStorage.setItem(k, JSON.stringify(v))
 };
 
-// ── EmailJS Config ──────────────────────────────────────────────────────
-// ISTRUZIONI SETUP (da fare una volta sola su emailjs.com):
-// 1. Registrati su https://www.emailjs.com (piano gratuito: 200 email/mese)
-// 2. Crea un "Email Service" (es. Gmail) → ottieni SERVICE_ID
-// 3. Crea un "Email Template" con variabili: {{to_name}}, {{to_email}}, {{passkey}}, {{platform_name}}
-// 4. Ottieni PUBLIC_KEY dal tuo profilo
-// ── Fine istruzioni ─────────────────────────────────────────────────────
-const EMAILJS_SERVICE_ID  = 'service_0vaitqp';
-const EMAILJS_TEMPLATE_ID = 'template_ymwq005';
-const EMAILJS_PUBLIC_KEY  = 'tFklrtmsPOhz0k7eK';
+// Device fingerprint per riconoscere dispositivi già autorizzati
+async function getDeviceFingerprint() {
+  const raw = [navigator.userAgent, navigator.language, screen.width+'x'+screen.height, Intl.DateTimeFormat().resolvedOptions().timeZone].join('|');
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,32);
+}
 
 async function sha256(msg) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
-// ── Genera passkey univoca CTP-XXXX-XXXX ────────────────────────────────
+// Genera passkey CTP-XXXX-XXXX
 function generatePasskey() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I,O,0,1 per chiarezza
-  const seg = () => Array.from({length:4}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const seg = () => Array.from({length:4}, ()=>chars[Math.floor(Math.random()*chars.length)]).join('');
   return `CTP-${seg()}-${seg()}`;
 }
 
-// ── Invia email con EmailJS ──────────────────────────────────────────────
-async function sendPasskeyEmail(toEmail, toName, passkey) {
-  // Se EmailJS non è configurato, salta silenziosamente (mostriamo la passkey a schermo)
-  if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
-    console.warn('EmailJS non configurato — passkey mostrata solo a schermo');
-    return { ok: false, reason: 'not_configured' };
-  }
-  try {
-    emailjs.init(EMAILJS_PUBLIC_KEY);
-    const res = await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_name:       toName || toEmail.split('@')[0],
-      to_email:      toEmail,
-      email:         toEmail,
-      name:          toName || toEmail.split('@')[0],
-      passkey:       passkey,
-      platform_name: 'CryptoTrade Pro | Institutional Terminal'
-    });
-    return { ok: true, res };
-  } catch(e) {
-    console.error('EmailJS error:', e);
-    return { ok: false, reason: e.text || e.message || 'unknown' };
-  }
+// ── API CALLS BACKEND ────────────────────────────────────────────────────
+async function apiRegister({ email, full_name, passkey, password }) {
+  const passwordHash = await sha256(password + email.toLowerCase().trim());
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+    body: JSON.stringify({ email, full_name, passkey, password_hash: passwordHash })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Errore server');
+  return data;
 }
 
-// ── Auth (localStorage) ──────────────────────────────────────────────────
-async function callAuth(action, params = {}) {
-  const USERS_KEY = 'ct_users';
-  const users = store.get(USERS_KEY, []);
-
-  if (action === 'register') {
-    const { email, password, full_name, passkey } = params;
-    if (!email || !password) return { success: false, error: 'Dati mancanti.' };
-    const emailNorm = (email || '').toLowerCase().trim();
-    if (users.find(u => u.email === emailNorm)) return { success: false, error: 'Email già registrata.' };
-    const passwordHash = await sha256(password + emailNorm);
-    const passkeyHash  = await sha256(passkey + emailNorm); // salva hash, mai plaintext
-    const newUser = {
-      id: 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-      email: emailNorm,
-      full_name: full_name || '',
-      passwordHash,
-      passkeyHash,   // <-- salvata come hash
-      createdAt: new Date().toISOString()
-    };
-    users.push(newUser);
-    store.set(USERS_KEY, users);
-    return { success: true, user: newUser };
-  }
-
-  if (action === 'login') {
-    const { email, password } = params;
-    const emailNorm = (email || '').toLowerCase().trim();
-    const user = users.find(u => u.email === emailNorm);
-    if (!user) return { success: false, error: 'Credenziali non valide.' };
-    const hash = await sha256(password + emailNorm);
-    if (hash !== user.passwordHash) return { success: false, error: 'Credenziali non valide.' };
-    const token = await sha256('tok_' + user.id + '_' + Date.now());
-    const session = { token, userId: user.id, expires: Date.now() + 86400000 * 7,
-      user: { id: user.id, email: user.email, full_name: user.full_name } };
-    store.set('ct_session', session);
-    return { success: true, ...session };
-  }
-
-  return { success: false, error: 'Azione non riconosciuta.' };
+async function apiVerifyPasskey({ email, passkey }) {
+  const fp = await getDeviceFingerprint();
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/verify-passkey`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+    body: JSON.stringify({ email, passkey, device_fingerprint: fp })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Passkey non valida');
+  return data;
 }
 
-// ── Componente LoginForm ─────────────────────────────────────────────────
-function LoginForm({ onSwitch, onSuccess }) {
-  const [form, setForm] = useState({ email: "", password: "" });
+async function apiLogin({ email, password }) {
+  // Login: verifica su Supabase auth
+  const passwordHash = await sha256(password + email.toLowerCase().trim());
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+    body: JSON.stringify({ email, password_hash: passwordHash })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Credenziali non valide');
+  return data;
+}
+
+// ── COMPONENTE: RegisterForm ─────────────────────────────────────────────
+function RegisterForm({ onSwitch, onSuccess }) {
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({ email:'', password:'', confirmPw:'', full_name:'' });
+  const [passkey, setPasskey] = useState('');
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-
-  const doLogin = async e => {
-    e.preventDefault();
-    setLoading(true); setErr("");
-    try {
-      const res = await callAuth("login", form);
-      if (res.success) {
-        store.set("crypto_session", { token: res.token, userId: res.userId, user: res.user });
-        localStorage.setItem('user_logged_in', '1');
-        onSuccess(res.user);
-      } else { setErr(res.error || "Errore"); }
-    } catch { setErr("Errore di rete"); }
-    setLoading(false);
-  };
-
-  return React.createElement("div", null,
-    React.createElement("h1", { className: "title" }, "Accedi"),
-    React.createElement("p", { className: "subtitle" }, "Bentornato su CryptoTrade Pro"),
-    err && React.createElement("div", { className: "error" }, err),
-    React.createElement("form", { onSubmit: doLogin },
-      React.createElement("label", null, "Email"),
-      React.createElement("input", { type: "email", placeholder: "tua@email.it", value: form.email,
-        onChange: e => setForm({ ...form, email: e.target.value }), disabled: loading }),
-      React.createElement("label", null, "Password"),
-      React.createElement("input", { type: "password", placeholder: "••••••••", value: form.password,
-        onChange: e => setForm({ ...form, password: e.target.value }), disabled: loading }),
-      React.createElement("button", { type: "submit", className: "btn btn-primary", disabled: loading },
-        loading ? "⏳ Accesso in corso…" : "🔐 Accedi")
-    ),
-    React.createElement("div", { style: { textAlign: 'center', marginTop: '16px', fontSize: '12px' } },
-      React.createElement("button", { type: "button", className: "btn-secondary",
-        onClick: () => onSwitch("register"),
-        style: { background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer' }
-      }, "Non hai un account? Registrati")
-    )
-  );
-}
-
-// ── Componente RegisterForm ──────────────────────────────────────────────
-function RegisterForm({ onSwitch }) {
-  const [form, setForm]         = useState({ full_name: "", email: "", password: "", confirmPwd: "" });
-  const [loading, setLoading]   = useState(false);
-  const [err, setErr]           = useState("");
-  const [passkey, setPasskey]   = useState(null);   // dopo registrazione
-  const [emailSent, setEmailSent] = useState(null); // true/false/null
-  const [copied, setCopied]     = useState(false);
-  const [tosAccepted, setTosAccepted] = useState(false);
-  const [showTos, setShowTos]   = useState(false);
+  const [err, setErr] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const doRegister = async e => {
     e.preventDefault();
-    if (!tosAccepted)           { setErr("Devi accettare i Termini e le Condizioni per procedere."); return; }
-    if (form.password !== form.confirmPwd) { setErr("Le password non coincidono."); return; }
-    if (form.password.length < 8) { setErr("Password minimo 8 caratteri."); return; }
-    if (!form.email.includes('@')) { setErr("Inserisci un indirizzo email valido."); return; }
-
-    setLoading(true); setErr("");
-
-    // 1. Genera passkey univoca
-    const newPasskey = generatePasskey();
-
-    // 2. Registra utente
+    setErr('');
+    if (form.password !== form.confirmPw) return setErr('Le password non coincidono.');
+    if (form.password.length < 8) return setErr('Password minimo 8 caratteri.');
+    setLoading(true);
     try {
-      const res = await callAuth("register", { ...form, passkey: newPasskey });
-      if (!res.success) { setErr(res.error || "Errore"); setLoading(false); return; }
-
-      // 3. Aggiorna l'AG_KEY in localStorage per questa sessione
-      //    (la passkey viene salvata anche in sessionStorage per sbloccare la dashboard)
-      sessionStorage.setItem('ag_unlocked', '1');
-      sessionStorage.setItem('user_passkey', newPasskey); // per mostrare nell'area utente
-      localStorage.setItem('user_passkey_' + res.user.id, newPasskey); // backup locale
-
-      // 4. Invia email
-      setPasskey(newPasskey);
-      const emailRes = await sendPasskeyEmail(form.email, form.full_name, newPasskey);
-      setEmailSent(emailRes.ok);
-
-      // 5. Auto-login
-      try {
-        const loginRes = await callAuth("login", { email: form.email, password: form.password });
-        if (loginRes.success) {
-          store.set("crypto_session", { token: loginRes.token, userId: loginRes.userId, user: loginRes.user });
-          localStorage.setItem('user_logged_in', '1');
-          localStorage.setItem('user_name', form.full_name || form.email);
-        }
-      } catch {}
-
-    } catch { setErr("Errore di rete. Riprova."); }
+      const pk = generatePasskey();
+      setPasskey(pk);
+      const res = await apiRegister({ email: form.email, full_name: form.full_name, passkey: pk, password: form.password });
+      if (res.success) {
+        setStep(2);
+      }
+    } catch(e) { setErr(e.message); }
     setLoading(false);
   };
 
   const copyPasskey = () => {
-    if (!passkey) return;
-    navigator.clipboard.writeText(passkey).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    }).catch(() => {
-      // fallback
-      const el = document.createElement('textarea');
-      el.value = passkey;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand('copy');
-      document.body.removeChild(el);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    });
+    navigator.clipboard?.writeText(passkey).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); });
   };
 
-  // ── Schermata DOPO registrazione: mostra passkey ──────────────────────
-  if (passkey) {
-    return React.createElement("div", null,
-      React.createElement("div", { style: { textAlign: 'center', marginBottom: '20px' } },
-        React.createElement("div", { style: { fontSize: '52px', marginBottom: '8px' } }, "🎉"),
-        React.createElement("h2", { style: { fontSize: '22px', fontWeight: 800,
-          background: 'linear-gradient(135deg,#22c55e,#06b6d4)', WebkitBackgroundClip:'text',
-          WebkitTextFillColor:'transparent' } }, "Registrazione completata!"),
-        React.createElement("p", { style: { color: '#9ca3af', fontSize: '13px', marginTop: '6px' } },
-          "Ecco la tua Passkey personale di accesso")
-      ),
+  const doConfirm = () => {
+    store.set('crypto_session', { userId: 'pending', email: form.email });
+    localStorage.setItem('user_logged_in','1');
+    onSuccess({ email: form.email, full_name: form.full_name });
+  };
 
-      // Passkey box
-      React.createElement("div", { className: "passkey-box" },
-        React.createElement("div", { style: { fontSize: '12px', color: '#9ca3af', marginBottom: '4px' } },
-          "🔑 LA TUA PASSKEY PERSONALE"),
-        React.createElement("div", {
-          className: "passkey-code",
-          onClick: copyPasskey,
-          title: "Clicca per copiare"
-        }, passkey),
-        React.createElement("div", { className: "copy-hint" },
-          copied
-            ? React.createElement("span", { style: { color: '#22c55e' } }, "✅ Copiata!")
-            : "👆 Clicca per copiare"
-        )
-      ),
-
-      // Stato email
-      emailSent === true && React.createElement("div", { className: "success-box" },
-        "📧 Passkey inviata a " + form.email + " — controlla la tua casella (anche spam)."
-      ),
-      emailSent === false && React.createElement("div", { className: "warning-box" },
-        "⚠️ Email non inviata (servizio non configurato). " +
-        "Salva subito la passkey qui sopra — ti servirà per ogni accesso alla dashboard."
-      ),
-      emailSent === null && React.createElement("div", { style: { color: '#9ca3af', fontSize: '12px', textAlign: 'center' } },
-        "📤 Invio email in corso…"
-      ),
-
-      // Warning salvataggio
-      React.createElement("div", { className: "warning-box" },
-        "⚠️ IMPORTANTE: Salva questa passkey in un posto sicuro. " +
-        "Viene richiesta ogni volta che apri la dashboard su un nuovo browser o dispositivo."
-      ),
-
-      // CTA entra
-      React.createElement("button", {
-        className: "btn btn-primary",
-        style: { marginTop: '8px' },
-        onClick: () => { window.location.href = DASHBOARD_URL; }
-      }, "🚀 Entra nella Dashboard"),
-
-      React.createElement("div", { style: { textAlign: 'center', marginTop: '12px', fontSize: '11px', color: '#4b5563' } },
-        "La sessione è già attiva — la passkey non verrà richiesta ora"
-      )
-    );
-  }
-
-  // ── Schermata REGISTRAZIONE ───────────────────────────────────────────
-  return React.createElement("div", null,
-    React.createElement("h1", { className: "title" }, "Registrati"),
-    React.createElement("p", { className: "subtitle" }, "Crea il tuo account · Ricevi la tua Passkey"),
-    err && React.createElement("div", { className: "error" }, err),
-    React.createElement("form", { onSubmit: doRegister },
-      React.createElement("label", null, "Nome completo"),
-      React.createElement("input", { type: "text", placeholder: "Mario Rossi", value: form.full_name,
-        onChange: e => setForm({ ...form, full_name: e.target.value }), disabled: loading }),
-      React.createElement("label", null, "Email"),
-      React.createElement("input", { type: "email", placeholder: "tua@email.it", value: form.email,
-        onChange: e => setForm({ ...form, email: e.target.value }), disabled: loading }),
-      React.createElement("label", null, "Password (min 8 caratteri)"),
-      React.createElement("input", { type: "password", placeholder: "••••••••", value: form.password,
-        onChange: e => setForm({ ...form, password: e.target.value }), disabled: loading }),
-      React.createElement("label", null, "Conferma password"),
-      React.createElement("input", { type: "password", placeholder: "••••••••", value: form.confirmPwd,
-        onChange: e => setForm({ ...form, confirmPwd: e.target.value }), disabled: loading }),
-
-      // TOS
-      React.createElement("div", { style: {display:'flex',alignItems:'flex-start',gap:'10px',margin:'12px 0',
-        padding:'10px',background:'rgba(99,102,241,0.05)',borderRadius:'8px',border:'1px solid rgba(99,102,241,0.15)'} },
-        React.createElement("input", { type:"checkbox", id:"tos-check", checked: tosAccepted,
-          onChange: e => setTosAccepted(e.target.checked),
-          style: {width:'16px',height:'16px',marginTop:'2px',flexShrink:0,cursor:'pointer'} }),
-        React.createElement("label", { htmlFor:"tos-check",
-          style: {fontSize:'12px',color:'#9ca3af',cursor:'pointer',lineHeight:'1.5',margin:0} },
-          "Ho letto e accetto i ",
-          React.createElement("span", {
-            onClick: e => { e.preventDefault(); setShowTos(true); },
-            style: {color:'#6366f1',textDecoration:'underline',cursor:'pointer'}
-          }, "Termini e Condizioni"),
-          " di utilizzo della piattaforma."
-        )
-      ),
-
-      // Nota passkey
-      React.createElement("div", { style: {display:'flex',gap:'10px',padding:'10px',
-        background:'rgba(99,102,241,0.08)',borderRadius:'8px',border:'1px solid rgba(99,102,241,0.2)',
-        marginBottom:'8px',alignItems:'flex-start'} },
-        React.createElement("span", { style: {fontSize:'18px',flexShrink:0} }, "🔑"),
-        React.createElement("div", { style: {fontSize:'12px',color:'#9ca3af',lineHeight:1.5} },
-          React.createElement("strong", { style: {color:'#a78bfa'} }, "Passkey personale: "),
-          "dopo la registrazione riceverai una passkey univoca via email. Serve per sbloccare la dashboard."
-        )
-      ),
-
-      React.createElement("button", { type: "submit", className: "btn btn-primary",
-        disabled: loading || !tosAccepted },
-        loading ? "⏳ Creazione account…" : "✅ Registrati e ricevi Passkey"
-      ),
-
-      // TOS Modal
-      showTos && React.createElement("div", {
-        style: {position:'fixed',inset:0,background:'rgba(0,0,0,.85)',zIndex:9999,overflowY:'auto',
-          display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'40px 16px'}
-      },
-        React.createElement("div", {
-          style: {background:'#111827',borderRadius:'12px',padding:'24px',maxWidth:'500px',width:'100%',
-            border:'1px solid rgba(255,255,255,.1)'}
-        },
-          React.createElement("h3", { style: {color:'#e2e8f0',marginBottom:'16px'} }, "📋 Termini e Condizioni"),
-          React.createElement("div", { style: {fontSize:'12px',color:'#9ca3af',lineHeight:1.7,maxHeight:'60vh',overflowY:'auto'} },
-            React.createElement("p", { style: {fontWeight:'700',color:'#e2e8f0'} }, "1. Servizio"),
-            React.createElement("p", null, "CryptoTrade Pro è una piattaforma di paper trading a scopo educativo e simulativo. Nessuna transazione reale viene eseguita."),
-            React.createElement("p", { style: {marginTop:'12px',fontWeight:'700',color:'#e2e8f0'} }, "2. Responsabilità"),
-            React.createElement("p", null, "L'utente è l'unico responsabile delle proprie decisioni di investimento. La piattaforma non fornisce consulenza finanziaria."),
-            React.createElement("p", { style: {marginTop:'12px',fontWeight:'700',color:'#e2e8f0'} }, "3. Dati"),
-            React.createElement("p", null, "I dati di trading sono simulati. I prezzi in tempo reale sono forniti da fonti pubbliche senza garanzia di accuratezza."),
-            React.createElement("p", { style: {marginTop:'12px',fontWeight:'700',color:'#e2e8f0'} }, "4. Privacy"),
-            React.createElement("p", null, "I dati vengono archiviati esclusivamente nel tuo browser (localStorage). Nessuna trasmissione a server terzi senza consenso."),
-            React.createElement("p", { style: {marginTop:'12px',fontWeight:'700',color:'#e2e8f0'} }, "5. Accettazione"),
-            React.createElement("p", null, "Utilizzando la piattaforma dichiari di avere almeno 18 anni e di accettare integralmente i presenti Termini.")
-          ),
-          React.createElement("button", {
-            className: "btn btn-primary",
-            onClick: () => { setTosAccepted(true); setShowTos(false); },
-            style: { marginTop: '16px', width: '100%' }
-          }, "✅ Accetto i Termini")
-        )
-      )
+  if (step === 2) return React.createElement('div', null,
+    React.createElement('h1', { className:'title' }, '✅ Registrazione Completata'),
+    React.createElement('p', { className:'subtitle' }, 'Controlla la tua email — la passkey è stata inviata'),
+    React.createElement('div', { className:'passkey-box' },
+      React.createElement('p', { style:{color:'#9ca3af',fontSize:'12px',marginBottom:'8px',letterSpacing:'1px'} }, 'MASTER PASSKEY'),
+      React.createElement('div', { className:'passkey-code', onClick: copyPasskey }, passkey),
+      React.createElement('p', { className:'copy-hint', style:{color:'#6b7280',fontSize:'11px',marginTop:'4px'} }, copied ? '✅ Copiata!' : '👆 Tocca per copiare')
     ),
-    React.createElement("div", { style: { textAlign: 'center', marginTop: '16px', fontSize: '12px' } },
-      React.createElement("button", { type: "button", className: "btn-secondary",
-        onClick: () => onSwitch("login"),
-        style: { background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer' }
-      }, "Hai già un account? Accedi")
-    )
+    React.createElement('div', { className:'warning-box' },
+      '⚠️ Salva questa passkey! È l\'unico modo per accedere da nuovi dispositivi. È stata inviata anche alla tua email.'
+    ),
+    React.createElement('div', { className:'success-box' }, '📧 Email inviata a ' + form.email),
+    React.createElement('button', { className:'btn btn-primary', onClick: doConfirm }, '🚀 Vai alla Dashboard')
+  );
+
+  return React.createElement('div', null,
+    React.createElement('h1', { className:'title' }, 'Crea Account'),
+    React.createElement('p', { className:'subtitle' }, React.createElement('span', null, 'Backend Sicuro'), React.createElement('span', { className:'badge' }, '🔐 Argon2id')),
+    err && React.createElement('div', { className:'error' }, err),
+    React.createElement('form', { onSubmit: doRegister },
+      React.createElement('label', null, 'Nome completo'),
+      React.createElement('input', { type:'text', placeholder:'Mario Rossi', value:form.full_name, onChange:e=>setForm({...form,full_name:e.target.value}), disabled:loading }),
+      React.createElement('label', null, 'Email'),
+      React.createElement('input', { type:'email', placeholder:'tua@email.it', value:form.email, onChange:e=>setForm({...form,email:e.target.value}), required:true, disabled:loading }),
+      React.createElement('label', null, 'Password'),
+      React.createElement('input', { type:'password', placeholder:'Minimo 8 caratteri', value:form.password, onChange:e=>setForm({...form,password:e.target.value}), required:true, disabled:loading }),
+      React.createElement('label', null, 'Conferma Password'),
+      React.createElement('input', { type:'password', placeholder:'Ripeti password', value:form.confirmPw, onChange:e=>setForm({...form,confirmPw:e.target.value}), required:true, disabled:loading }),
+      React.createElement('button', { type:'submit', className:'btn btn-primary', disabled:loading },
+        loading ? '⏳ Creazione account…' : '🔐 Crea Account Sicuro')
+    ),
+    React.createElement('button', { className:'btn btn-secondary', style:{marginTop:'12px'}, onClick:onSwitch }, 'Hai già un account? Accedi')
   );
 }
 
-// ── App root ─────────────────────────────────────────────────────────────
-function PasskeyPreview() {
-  const pk = 'CTP-' + Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('') +
-             '-' + Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
-  const [copied, setCopied] = useState(false);
-  const copy = () => { navigator.clipboard.writeText(pk).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);}); };
-  return React.createElement("div", null,
-    React.createElement("div",{style:{textAlign:'center',marginBottom:'20px'}},
-      React.createElement("div",{style:{fontSize:'52px',marginBottom:'8px'}},"🎉"),
-      React.createElement("h2",{style:{fontSize:'22px',fontWeight:800,
-        background:'linear-gradient(135deg,#22c55e,#06b6d4)',WebkitBackgroundClip:'text',
-        WebkitTextFillColor:'transparent'}},"Registrazione completata!"),
-      React.createElement("p",{style:{color:'#9ca3af',fontSize:'13px',marginTop:'6px'}},"Ecco la tua Passkey personale di accesso")
+// ── COMPONENTE: LoginForm ────────────────────────────────────────────────
+function LoginForm({ onSwitch, onSuccess }) {
+  const [form, setForm] = useState({ email:'', password:'' });
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [needsPasskey, setNeedsPasskey] = useState(false);
+  const [passkey, setPasskey] = useState('');
+
+  const doLogin = async e => {
+    e.preventDefault();
+    setLoading(true); setErr('');
+    try {
+      const fp = await getDeviceFingerprint();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+        body: JSON.stringify({ email: form.email, password: form.password, device_fingerprint: fp })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.new_device) { setNeedsPasskey(true); }
+        else throw new Error(data.error || 'Credenziali non valide');
+      } else {
+        store.set('crypto_session', { token: data.token, userId: data.user?.id, user: data.user });
+        localStorage.setItem('user_logged_in','1');
+        onSuccess(data.user);
+      }
+    } catch(e) { setErr(e.message); }
+    setLoading(false);
+  };
+
+  const doPasskeyVerify = async e => {
+    e.preventDefault();
+    setLoading(true); setErr('');
+    try {
+      const res = await apiVerifyPasskey({ email: form.email, passkey });
+      if (res.success) {
+        store.set('crypto_session', { userId: res.user?.id, user: res.user });
+        localStorage.setItem('user_logged_in','1');
+        onSuccess(res.user);
+      }
+    } catch(e) { setErr(e.message); }
+    setLoading(false);
+  };
+
+  if (needsPasskey) return React.createElement('div', null,
+    React.createElement('h1', { className:'title' }, '🔒 Nuovo Dispositivo'),
+    React.createElement('p', { className:'subtitle' }, 'Inserisci la tua Master Passkey per autorizzare questo dispositivo'),
+    err && React.createElement('div', { className:'error' }, err),
+    React.createElement('form', { onSubmit: doPasskeyVerify },
+      React.createElement('label', null, 'Master Passkey'),
+      React.createElement('input', { type:'text', placeholder:'CTP-XXXX-XXXX', value:passkey,
+        onChange:e=>setPasskey(e.target.value.toUpperCase()), style:{fontFamily:'monospace',letterSpacing:'3px',fontSize:'18px'}, required:true, disabled:loading }),
+      React.createElement('button', { type:'submit', className:'btn btn-primary', disabled:loading },
+        loading ? '⏳ Verifica…' : '✅ Autorizza Dispositivo')
     ),
-    React.createElement("div",{className:"passkey-box"},
-      React.createElement("div",{style:{fontSize:'12px',color:'#9ca3af',marginBottom:'4px'}},"🔑 LA TUA PASSKEY PERSONALE"),
-      React.createElement("div",{className:"passkey-code",onClick:copy,title:"Clicca per copiare"},pk),
-      React.createElement("div",{className:"copy-hint"},
-        copied ? React.createElement("span",{style:{color:'#22c55e'}},"✅ Copiata!") : "👆 Clicca per copiare"
-      )
+    React.createElement('button', { className:'btn btn-secondary', style:{marginTop:'12px'}, onClick:()=>setNeedsPasskey(false) }, '← Torna al Login')
+  );
+
+  return React.createElement('div', null,
+    React.createElement('h1', { className:'title' }, 'Accedi'),
+    React.createElement('p', { className:'subtitle' }, 'Bentornato su CryptoTrade Pro'),
+    err && React.createElement('div', { className:'error' }, err),
+    React.createElement('form', { onSubmit: doLogin },
+      React.createElement('label', null, 'Email'),
+      React.createElement('input', { type:'email', placeholder:'tua@email.it', value:form.email, onChange:e=>setForm({...form,email:e.target.value}), required:true, disabled:loading }),
+      React.createElement('label', null, 'Password'),
+      React.createElement('input', { type:'password', placeholder:'••••••••', value:form.password, onChange:e=>setForm({...form,password:e.target.value}), required:true, disabled:loading }),
+      React.createElement('button', { type:'submit', className:'btn btn-primary', disabled:loading },
+        loading ? '⏳ Accesso…' : '🔐 Accedi')
     ),
-    React.createElement("div",{className:"success-box"},"📧 Passkey inviata a demo@example.it — controlla la tua casella (anche spam)."),
-    React.createElement("div",{className:"warning-box"},
-      "⚠️ IMPORTANTE: Salva questa passkey in un posto sicuro. "+
-      "Viene richiesta ogni volta che apri la dashboard su un nuovo browser o dispositivo."
-    ),
-    React.createElement("button",{className:"btn btn-primary",style:{marginTop:'8px'},
-      onClick:()=>{window.location.href=DASHBOARD_URL;}},
-      "🚀 Entra nella Dashboard"
-    ),
-    React.createElement("div",{style:{textAlign:'center',marginTop:'12px',fontSize:'11px',color:'#4b5563'}},
-      "⚡ Anteprima — in produzione la passkey sarà unica per ogni utente"
-    )
+    React.createElement('button', { className:'btn btn-secondary', style:{marginTop:'12px'}, onClick:onSwitch }, 'Non hai un account? Registrati')
   );
 }
 
+// ── APP ROOT ─────────────────────────────────────────────────────────────
 function App() {
-  const params = new URLSearchParams(window.location.search);
-  const _initPage = params.get('mode') || 'register';
-  const isPreview = params.get('preview') === '1';
-  const [page, setPage] = useState(_initPage);
-  if (isPreview) return React.createElement("div", { className: "container" }, React.createElement(PasskeyPreview, null));
-  return React.createElement("div", { className: "container" },
-    page === "register" && React.createElement(RegisterForm, { onSwitch: setPage }),
-    page === "login"    && React.createElement(LoginForm, { onSwitch: setPage,
-      onSuccess: () => window.location.href = DASHBOARD_URL })
+  const [view, setView] = useState('login');
+  const onSuccess = user => { window.location.href = DASHBOARD_URL; };
+  return React.createElement('div', { style:{padding:'20px',width:'100%',display:'flex',justifyContent:'center'} },
+    React.createElement('div', { className:'container' },
+      view === 'login'
+        ? React.createElement(LoginForm, { onSwitch:()=>setView('register'), onSuccess })
+        : React.createElement(RegisterForm, { onSwitch:()=>setView('login'), onSuccess })
+    )
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(React.createElement(App, null));
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
 </script>
 </body>
 </html>

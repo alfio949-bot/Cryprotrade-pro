@@ -137,8 +137,12 @@ function RegisterForm({ onSwitch, onSuccess }) {
   };
 
   const doConfirm = () => {
-    store.set('crypto_session', { userId: 'pending', email: form.email });
+    const userId = 'pending_' + Date.now();
+    store.set('crypto_session', { userId, email: form.email });
     localStorage.setItem('user_logged_in','1');
+    // Salva la passkey per l'access gate di dashboard.html
+    localStorage.setItem('stored_passkey', passkey);
+    localStorage.setItem('user_passkey_' + userId, passkey);
     onSuccess({ email: form.email, full_name: form.full_name });
   };
 
